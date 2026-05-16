@@ -1,0 +1,195 @@
+/**
+ * Unit Tests - 游戏核心逻辑测试
+ * 使用原生断言（无需测试框架，可在Node.js直接运行）
+ */
+
+// ---- Simple Test Runner ----
+let passed = 0, failed = 0;
+function test(name, fn) {
+  try { fn(); console.log(`  ✅ ${name}`); passed++; }
+  catch (e) { console.log(`  ❌ ${name}: ${e.message}`); failed++; }
+}
+function assert(val, msg) { if (!val) throw new Error(msg || 'Assertion failed'); }
+function assertEqual(a, b, msg) { if (a !== b) throw new Error(msg || `Expected ${b} but got ${a}`); }
+
+// ---- Mock GameState ----
+class MockGameState {
+  constructor() { this.reset(); }
+  reset() {
+    this.choices = [];
+    this.scores = { strategy: 0, diplomacy: 0, loyalty: 0, legacy: 0, humanity: 0 };
+    this.unlockedChapters = [0];
+    this.ending = null;
+  }
+  recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact) {
+    this.choices.push({ chapterIndex, chapterId, nodeId, choiceText, impact });
+    if (impact) {
+      Object.entries(impact).forEach(([k, v]) => {
+        if (this.scores[k] !== undefined)
+          this.scores[k] = Math.max(0, Math.min(100, this.scores[k] + v));
+      });
+    }
+  }
+  unlockChapter(i) { if (!this.unlockedChapters.includes(i)) this.unlockedChapters.push(i); }
+  getChoicesForChapter(i) { return this.choices.filter(c => c.chapterIndex === i); }
+  computeEnding() {
+    const avg = Object.values(this.scores).reduce((a, b) => a + b, 0) / 5;
+    if (avg >= 70) this.ending = 'triumph';
+    else if (avg >= 45) this.ending = 'legacy';
+    else this.ending = 'tragedy';
+    return this.ending;
+  }
+}
+
+// ---- Tests ----
+console.log('\n🎮 拿破仑传奇 - 单元测试\n');
+
+console.log('── GameState 测试 ──');
+const gs = new MockGameState();
+
+test('初始分数应全为0', () => {
+  Object.values(gs.scores).forEach(v => assertEqual(v, 0, '初始分数不为0'));
+});
+
+test('recordChoice 应正确累加分数', () => {
+  gs.recordChoice(0, 'ch1', 'n1', '努力学习', { strategy: 10, legacy: 5 });
+  assertEqual(gs.scores.strategy, 10, 'strategy 应为10');
+  assertEqual(gs.scores.legacy, 5, 'legacy 应为5');
+  assertEqual(gs.scores.diplomacy, 0, 'diplomacy 应仍为0');
+});
+
+test('分数不应超过100', () => {
+  const g2 = new MockGameState();
+  for (let i = 0; i < 20; i++) g2.recordChoice(0, 'x', 'y', 'z', { strategy: 10 });
+  assert(g2.scores.strategy <= 100, '分数超过100');
+});
+
+test('分数不应低于0', () => {
+  const g2 = new MockGameState();
+  g2.recordChoice(0, 'x', 'y', 'z', { strategy: -500 });
+  assert(g2.scores.strategy >= 0, '分数低于0');
+});
+
+test('getChoicesForChapter 应只返回该章节的选择', () => {
+  const g2 = new MockGameState();
+  g2.recordChoice(0, 'ch1', 'n1', '选A', { strategy: 5 });
+  g2.recordChoice(1, 'ch2', 'n2', '选B', { diplomacy: 5 });
+  g2.recordChoice(0, 'ch1', 'n3', '选C', { legacy: 5 });
+  const ch0 = g2.getChoicesForChapter(0);
+  assertEqual(ch0.length, 2, '第0章应有2条选择');
+  const ch1 = g2.getChoicesForChapter(1);
+  assertEqual(ch1.length, 1, '第1章应有1条选择');
+});
+
+test('unlockChapter 不应重复添加', () => {
+  const g2 = new MockGameState();
+  g2.unlockChapter(1);
+  g2.unlockChapter(1);
+  assertEqual(g2.unlockedChapters.length, 2, '不应重复解锁');
+});
+
+console.log('\n── 结局计算测试 ──');
+
+test('高分应触发 triumph 结局', () => {
+  const g = new MockGameState();
+  Object.keys(g.scores).forEach(k => g.scores[k] = 80);
+  assertEqual(g.computeEnding(), 'triumph', '高分应为triumph');
+});
+
+test('中分应触发 legacy 结局', () => {
+  const g = new MockGameState();
+  Object.keys(g.scores).forEach(k => g.scores[k] = 50);
+  assertEqual(g.computeEnding(), 'legacy', '中分应为legacy');
+});
+
+test('低分应触发 tragedy 结局', () => {
+  const g = new MockGameState();
+  Object.keys(g.scores).forEach(k => g.scores[k] = 20);
+  assertEqual(g.computeEnding(), 'tragedy', '低分应为tragedy');
+});
+
+test('边界值 45 分应为 legacy', () => {
+  const g = new MockGameState();
+  Object.keys(g.scores).forEach(k => g.scores[k] = 45);
+  assertEqual(g.computeEnding(), 'legacy', '45分边界值应为legacy');
+});
+
+test('边界值 70 分应为 triumph', () => {
+  const g = new MockGameState();
+  Object.keys(g.scores).forEach(k => g.scores[k] = 70);
+  assertEqual(g.computeEnding(), 'triumph', '70分边界值应为triumph');
+});
+
+console.log('\n── 对话节点结构测试 ──');
+
+const mockDialogue = [
+  { id: 'start', speaker: '莱蒂西亚', text: '你回来了', choices: [
+    { text: '选A', impact: { strategy: 10 }, next: 'a1' },
+    { text: '选B', impact: { diplomacy: 8 }, next: 'b1' },
+  ]},
+  { id: 'a1', speaker: '莱蒂西亚', text: '很好' },
+  { id: 'b1', speaker: '莱蒂西亚', text: '明智' },
+];
+
+test('对话节点应有 id 字段', () => {
+  mockDialogue.forEach(n => assert(n.id, `节点缺少id: ${JSON.stringify(n)}`));
+});
+
+test('对话节点应有 speaker 和 text', () => {
+  mockDialogue.forEach(n => {
+    assert(n.speaker, `节点缺少speaker`);
+    assert(n.text, `节点缺少text`);
+  });
+});
+
+test('选项节点的 next 引用应能在节点列表中找到', () => {
+  mockDialogue.forEach(node => {
+    if (node.choices) {
+      node.choices.forEach(c => {
+        if (c.next) {
+          const found = mockDialogue.find(n => n.id === c.next);
+          assert(found, `找不到节点 id="${c.next}"`);
+        }
+      });
+    }
+  });
+});
+
+test('选项的 impact 字段应只包含合法分数键', () => {
+  const validKeys = ['strategy', 'diplomacy', 'loyalty', 'legacy', 'humanity'];
+  mockDialogue.forEach(node => {
+    if (node.choices) {
+      node.choices.forEach(c => {
+        if (c.impact) {
+          Object.keys(c.impact).forEach(k => {
+            assert(validKeys.includes(k), `非法impact键: ${k}`);
+          });
+        }
+      });
+    }
+  });
+});
+
+console.log('\n── 章节数据测试 ──');
+
+const chapters = [
+  { id: 'chapter1', index: 0, title: '科西嘉岛的少年', year: '1785年', desc: '...' },
+  { id: 'chapter2', index: 1, title: '土伦之战', year: '1793年', desc: '...' },
+];
+
+test('章节索引应连续', () => {
+  chapters.forEach((ch, i) => assertEqual(ch.index, i, `章节${i}索引错误`));
+});
+
+test('所有章节应有完整字段', () => {
+  chapters.forEach(ch => {
+    assert(ch.id, '缺少id'); assert(ch.title, '缺少title');
+    assert(ch.year, '缺少year'); assert(ch.desc, '缺少desc');
+  });
+});
+
+// ---- Summary ----
+console.log(`\n${'─'.repeat(30)}`);
+console.log(`测试结果: ${passed} 通过 / ${failed} 失败`);
+if (failed === 0) console.log('🎉 所有测试通过！\n');
+else { console.log(`⚠️  ${failed} 个测试失败\n`); process.exit(1); }

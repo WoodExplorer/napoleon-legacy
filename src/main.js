@@ -1,0 +1,267 @@
+/**
+ * main.js - 游戏入口，UI流程管理
+ */
+import './style.css';
+import { GameEngine } from './core/GameEngine.js';
+import { gameState } from './core/GameState.js';
+import { MobileJoystick } from './controls/InputController.js';
+import { CHAPTERS } from './ui/ChapterData.js';
+import { renderSummary } from './ui/SummaryUI.js';
+import { Chapter1Scene } from './scenes/Chapter1Scene.js';
+import { Chapter2Scene } from './scenes/Chapter2Scene.js';
+import { Chapter3Scene } from './scenes/Chapter3Scene.js';
+import { Chapter4Scene } from './scenes/Chapter4Scene.js';
+import { Chapter5Scene, Chapter6Scene } from './scenes/Chapter56Scene.js';
+import { Chapter7Scene } from './scenes/Chapter7Scene.js';
+
+const SCENE_CLASSES = [
+  Chapter1Scene, Chapter2Scene, Chapter3Scene, Chapter4Scene,
+  Chapter5Scene, Chapter6Scene, Chapter7Scene,
+];
+
+// ---- DOM Elements ----
+const $ = id => document.getElementById(id);
+const loadingScreen = $('loading-screen');
+const mainMenu = $('main-menu');
+const chapterSelect = $('chapter-select');
+const gameCanvas = $('game-canvas');
+const gameUI = $('game-ui');
+const finalSummary = $('final-summary');
+const aboutScreen = $('about-screen');
+const pauseMenu = $('pause-menu');
+const chapterComplete = $('chapter-complete');
+const mobileControls = $('mobile-controls');
+
+let engine = null;
+
+// ---- Loading Sequence ----
+function simulateLoading() {
+  const bar = $('loading-bar');
+  const txt = $('loading-text');
+  const steps = [
+    [20, '初始化Three.js渲染引擎...'],
+    [45, '构建历史场景...'],
+    [65, '生成角色模型...'],
+    [80, '加载对话系统...'],
+    [95, '准备就绪...'],
+    [100, '欢迎来到拿破仑的世界！'],
+  ];
+  let i = 0;
+  const tick = () => {
+    if (i >= steps.length) {
+      setTimeout(showMainMenu, 600);
+      return;
+    }
+    const [pct, msg] = steps[i++];
+    if (bar) bar.style.width = pct + '%';
+    if (txt) txt.textContent = msg;
+    setTimeout(tick, 400);
+  };
+  setTimeout(tick, 300);
+}
+
+function showMainMenu() {
+  loadingScreen.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+  if (gameState.hasSave()) $('btn-continue')?.classList.remove('hidden');
+}
+
+// ---- Chapter Select ----
+function renderChapterSelect() {
+  const list = $('chapter-list');
+  if (!list) return;
+  list.innerHTML = CHAPTERS.map((ch, i) => {
+    const unlocked = gameState.unlockedChapters.includes(i);
+    const done = gameState.getChoicesForChapter(i).length > 0;
+    return `
+      <div class="chapter-card ${unlocked ? '' : 'locked'}" data-idx="${i}">
+        <div class="chapter-num">第${['一','二','三','四','五','六','七'][i]}章</div>
+        <div class="chapter-title">${ch.title}</div>
+        <div class="chapter-year">${ch.year}</div>
+        <div class="chapter-desc">${ch.desc}</div>
+        <div class="chapter-status">${done ? '✅' : unlocked ? '▶' : '🔒'}</div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.chapter-card:not(.locked)').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.idx);
+      startChapter(idx);
+    });
+  });
+}
+
+// ---- Start Chapter ----
+function startChapter(index) {
+  gameState.currentChapter = index;
+
+  // Hide all UI
+  [mainMenu, chapterSelect, finalSummary, aboutScreen].forEach(el => el?.classList.add('hidden'));
+  gameCanvas.classList.remove('hidden');
+  gameUI.classList.remove('hidden');
+  chapterComplete.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
+
+  // Update HUD
+  const ch = CHAPTERS[index];
+  $('hud-chapter-num').textContent = `第${['一','二','三','四','五','六','七'][index]}章`;
+  $('hud-chapter-name').textContent = ch.title;
+
+  // Create engine if needed
+  if (!engine) {
+    engine = new GameEngine(gameCanvas);
+    engine.setupDialogue({
+      box: $('dialogue-box'),
+      speaker: $('dialogue-speaker'),
+      text: $('dialogue-text'),
+      choices: $('dialogue-choices'),
+      portrait: $('portrait-canvas'),
+      skipHint: document.querySelector('.dialogue-skip-hint'),
+    });
+    setupMobileControls();
+    setupPauseMenu();
+  }
+
+  const SceneClass = SCENE_CLASSES[index];
+  const scene = new SceneClass();
+  engine.loadChapterScene(scene);
+  engine.start();
+
+  engine.onChapterComplete = () => showChapterComplete(index);
+
+  // Show mobile on touch device
+  if ('ontouchstart' in window) {
+    mobileControls.classList.remove('hidden');
+    $('mobile-interact')?.classList.remove('hidden');
+  }
+}
+
+// ---- Chapter Complete ----
+function showChapterComplete(index) {
+  engine.pause();
+  const ch = CHAPTERS[index];
+  const isLast = index >= CHAPTERS.length - 1;
+
+  $('complete-chapter-name').textContent = `✅ ${ch.title} — 完成`;
+  $('complete-summary').textContent = ch.desc;
+
+  const choicesEl = $('complete-choices');
+  const choices = gameState.getChoicesForChapter(index);
+  choicesEl.innerHTML = choices.length
+    ? '<h4 style="color:var(--gold);font-family:var(--font-title);margin-bottom:0.5rem;">您的选择</h4>' +
+      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${c.choiceText}</span></div>`).join('')
+    : '<p style="color:var(--text-secondary);font-size:0.9rem;">本章暂无重要选择记录</p>';
+
+  const nextBtn = $('btn-next-chapter');
+  const summaryBtn = $('btn-view-summary');
+  if (isLast) {
+    nextBtn.classList.add('hidden');
+    summaryBtn.classList.remove('hidden');
+    summaryBtn.onclick = () => { chapterComplete.classList.add('hidden'); showFinalSummary(); };
+  } else {
+    nextBtn.classList.remove('hidden');
+    summaryBtn.classList.add('hidden');
+    nextBtn.onclick = () => {
+      chapterComplete.classList.add('hidden');
+      const next = index + 1;
+      gameState.unlockChapter(next);
+      gameState.save();
+      engine.resume();
+      startChapter(next);
+    };
+  }
+
+  chapterComplete.classList.remove('hidden');
+}
+
+// ---- Final Summary ----
+function showFinalSummary() {
+  engine.stop();
+  gameCanvas.classList.add('hidden');
+  gameUI.classList.add('hidden');
+  finalSummary.classList.remove('hidden');
+  renderSummary();
+}
+
+// ---- Pause Menu ----
+function setupPauseMenu() {
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Escape' && engine) {
+      if (engine.isPaused) { engine.resume(); pauseMenu.classList.add('hidden'); }
+      else { engine.pause(); pauseMenu.classList.remove('hidden'); }
+    }
+  });
+  $('btn-resume')?.addEventListener('click', () => {
+    engine.resume(); pauseMenu.classList.add('hidden');
+  });
+  $('btn-chapter-menu')?.addEventListener('click', () => {
+    engine.stop(); pauseMenu.classList.add('hidden');
+    gameCanvas.classList.add('hidden'); gameUI.classList.add('hidden');
+    chapterSelect.classList.remove('hidden');
+    renderChapterSelect();
+  });
+  $('btn-main-menu')?.addEventListener('click', () => {
+    engine.stop(); pauseMenu.classList.add('hidden');
+    gameCanvas.classList.add('hidden'); gameUI.classList.add('hidden');
+    mainMenu.classList.remove('hidden');
+  });
+}
+
+// ---- Mobile Controls ----
+function setupMobileControls() {
+  const moveBase = $('joystick-move');
+  const moveThumb = $('move-thumb');
+  const lookBase = $('joystick-look');
+  const lookThumb = $('look-thumb');
+
+  if (moveBase && moveThumb) {
+    new MobileJoystick(moveBase, moveThumb, (x, y) => engine?.setMobileMoveVector(x, y));
+  }
+  if (lookBase && lookThumb) {
+    new MobileJoystick(lookBase, lookThumb, (x, y) => engine?.setMobileLookVector(x, y));
+  }
+  $('mobile-interact')?.addEventListener('touchstart', e => {
+    e.preventDefault(); engine?.triggerInteract();
+  }, { passive: false });
+}
+
+// ---- Menu Buttons ----
+$('btn-new-game')?.addEventListener('click', () => {
+  gameState.clear();
+  mainMenu.classList.add('hidden');
+  chapterSelect.classList.remove('hidden');
+  renderChapterSelect();
+});
+
+$('btn-continue')?.addEventListener('click', () => {
+  if (gameState.load()) {
+    mainMenu.classList.add('hidden');
+    chapterSelect.classList.remove('hidden');
+    renderChapterSelect();
+  }
+});
+
+$('btn-about')?.addEventListener('click', () => {
+  mainMenu.classList.add('hidden');
+  aboutScreen.classList.remove('hidden');
+});
+
+$('btn-back-from-about')?.addEventListener('click', () => {
+  aboutScreen.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+});
+
+$('btn-back-menu')?.addEventListener('click', () => {
+  chapterSelect.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+});
+
+$('btn-restart')?.addEventListener('click', () => {
+  gameState.clear();
+  finalSummary.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+  $('btn-continue')?.classList.add('hidden');
+});
+
+// ---- Boot ----
+simulateLoading();
