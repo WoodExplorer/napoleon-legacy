@@ -188,8 +188,79 @@ test('所有章节应有完整字段', () => {
   });
 });
 
-// ---- Summary ----
-console.log(`\n${'─'.repeat(30)}`);
-console.log(`测试结果: ${passed} 通过 / ${failed} 失败`);
-if (failed === 0) console.log('🎉 所有测试通过！\n');
-else { console.log(`⚠️  ${failed} 个测试失败\n`); process.exit(1); }
+// ---- PlotEngine Tests ----
+console.log('\n── PlotEngine 测试 ──');
+
+import('../core/PlotEngine.js').then(({ PlotEngine }) => {
+  test('PlotEngine should initialize and execute explore node', () => {
+    const plotData = { start: { type: 'explore' } };
+    const engine = new PlotEngine(plotData, {});
+    let exploreCalled = false;
+    engine.onEnterExplore = (node) => { exploreCalled = true; assertEqual(node.type, 'explore'); };
+    engine.start('start');
+    assert(exploreCalled, 'onEnterExplore not called');
+    assertEqual(engine.currentNodeId, 'start');
+  });
+
+  test('PlotEngine should handle dialog sequences and choices', () => {
+    const plotData = {
+      start: { type: 'dialog', next: 'q1' },
+      q1: { type: 'dialog', choices: [{ next: 'end' }] },
+      end: { type: 'chapter_end', nextChapter: 2 }
+    };
+    const engine = new PlotEngine(plotData, {});
+    let dialogCount = 0;
+    let endChapter = null;
+    engine.onShowDialog = () => { dialogCount++; };
+    engine.onChapterEnd = (ch) => { endChapter = ch; };
+    
+    engine.start('start');
+    assertEqual(dialogCount, 1, 'first dialog not shown');
+    engine.advance(plotData.start.next);
+    assertEqual(dialogCount, 2, 'second dialog not shown');
+    engine.advance(plotData.q1.choices[0].next);
+    assertEqual(endChapter, 2, 'chapter_end not called properly');
+  });
+
+  test('PlotEngine should evaluate conditions and set flags', () => {
+    const plotData = {
+      start: { type: 'set_flag', flag: 'met', value: true, next: 'check' },
+      check: {
+        type: 'condition',
+        conditions: [{ hasFlags: ['met'], next: 'success' }],
+        defaultNext: 'fail'
+      },
+      success: { type: 'event', eventName: 'win', next: 'end' },
+      fail: { type: 'explore' },
+      end: { type: 'chapter_end' }
+    };
+    const flags = {};
+    const mockState = { setFlag: (k, v) => { flags[k] = v; }, getFlag: (k) => flags[k] };
+    const engine = new PlotEngine(plotData, mockState);
+    let eventName = null;
+    engine.onTriggerEvent = (e) => { eventName = e; };
+    
+    engine.start('start');
+    assert(flags['met'], 'flag was not set');
+    assertEqual(eventName, 'win', 'event was not triggered');
+    assertEqual(engine.currentNodeId, 'end', 'did not advance to end after event');
+  });
+
+  test('PlotEngine should handle interact to transition from explore to dialog', () => {
+    const plotData = {
+      explore1: { type: 'explore', interactions: { 'npc1': 'dialog1' } },
+      dialog1: { type: 'dialog', next: 'end' }
+    };
+    const engine = new PlotEngine(plotData, {});
+    engine.start('explore1');
+    const handled = engine.handleInteract('npc1');
+    assert(handled, 'interact not handled');
+    assertEqual(engine.currentNodeId, 'dialog1', 'did not transition to dialog');
+  });
+
+  // ---- Summary ----
+  console.log(`\n${'─'.repeat(30)}`);
+  console.log(`测试结果: ${passed} 通过 / ${failed} 失败`);
+  if (failed === 0) console.log('🎉 所有测试通过！\n');
+  else { console.log(`⚠️  ${failed} 个测试失败\n`); process.exit(1); }
+});

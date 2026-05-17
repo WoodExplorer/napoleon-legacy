@@ -108,6 +108,7 @@ function startChapter(index) {
   $('hud-chapter-name').textContent = ch.title;
 
   // Create engine if needed
+  let pe;
   if (!engine) {
     engine = new GameEngine(gameCanvas);
     engine.setupDialogue({
@@ -122,12 +123,33 @@ function startChapter(index) {
     setupPauseMenu();
   }
 
-  const SceneClass = SCENE_CLASSES[index];
-  const scene = new SceneClass();
-  engine.loadChapterScene(scene);
-  engine.start();
+  // Use dynamic import or static import for PlotEngine and plotData
+  // Since we use ES modules, we can import dynamically
+  import('./core/PlotEngine.js').then(({ PlotEngine }) => {
+    import('./data/plotData.js').then(({ plotData }) => {
+      pe = new PlotEngine(plotData, gameState);
+      engine.setPlotEngine(pe, gameState);
+      
+      pe.onChapterEnd = (nextChapterIndex) => {
+         engine.pause();
+         showChapterComplete(index);
+      };
 
-  engine.onChapterComplete = () => showChapterComplete(index);
+      const SceneClass = SCENE_CLASSES[index];
+      const scene = new SceneClass();
+      engine.loadChapterScene(scene);
+      engine.start();
+
+      // Start plot engine if this chapter has a start node
+      const startNodeId = `ch${index + 1}_start`;
+      if (plotData[startNodeId]) {
+         pe.start(startNodeId);
+      } else {
+         // Fallback legacy setup
+         engine.onChapterComplete = () => showChapterComplete(index);
+      }
+    });
+  });
 
   // Show mobile on touch device
   if ('ontouchstart' in window) {

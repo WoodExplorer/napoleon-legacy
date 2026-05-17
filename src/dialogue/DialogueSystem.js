@@ -28,42 +28,20 @@ export class DialogueSystem {
     this.box.addEventListener('click', () => {
       if (this.isTyping) {
         this._finishTyping();
-      } else if (this.currentNode && !this.currentNode.choices) {
-        this._advance();
+      } else if (this.currentNode && (!this.currentNode.choices || this.currentNode.choices.length === 0)) {
+        if (this.onAction) this.onAction('next');
       }
     });
   }
 
-  /**
-   * 开始对话序列
-   * @param {Array} nodes - 对话节点数组
-   * @param {number} chapterIndex
-   * @param {string} chapterId
-   * @param {Function} onComplete - 对话完成回调
-   */
-  start(nodes, chapterIndex, chapterId, onComplete) {
-    this.nodes = nodes;
-    this.nodeIndex = 0;
-    this.chapterIndex = chapterIndex;
-    this.chapterId = chapterId;
-    this.onComplete = onComplete;
+  showNode(node, onAction) {
     this.box.classList.remove('hidden');
-    this._showNode(this.nodes[0]);
-  }
-
-  end() {
-    this.box.classList.add('hidden');
-    this.choicesEl.classList.add('hidden');
-    if (this.typeInterval) clearInterval(this.typeInterval);
-    this.currentNode = null;
-    if (this.onComplete) this.onComplete();
-  }
-
-  _showNode(node) {
     this.currentNode = node;
+    this.onAction = onAction;
+
     this.choicesEl.classList.add('hidden');
     this.choicesEl.innerHTML = '';
-
+    
     // 说话人名字
     this.speakerEl.textContent = node.speaker || '';
 
@@ -72,6 +50,13 @@ export class DialogueSystem {
 
     // 打字机效果
     this._typeText(node.text);
+  }
+
+  hide() {
+    this.box.classList.add('hidden');
+    this.choicesEl.classList.add('hidden');
+    if (this.typeInterval) clearInterval(this.typeInterval);
+    this.currentNode = null;
   }
 
   _typeText(text) {
@@ -118,41 +103,18 @@ export class DialogueSystem {
       const btn = document.createElement('button');
       btn.className = 'choice-btn';
       btn.innerHTML = `<span class="choice-letter">${letters[i]}</span> ${choice.text}`;
-      btn.addEventListener('click', () => this._selectChoice(choice, i));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._selectChoice(choice, i);
+      });
       this.choicesEl.appendChild(btn);
     });
   }
 
   _selectChoice(choice, index) {
-    // 记录选择到游戏状态
-    gameState.recordChoice(
-      this.chapterIndex,
-      this.chapterId,
-      this.currentNode.id,
-      choice.text,
-      choice.impact
-    );
-
     this.choicesEl.classList.add('hidden');
     if (this.skipHint) this.skipHint.style.display = '';
-
-    if (choice.next) {
-      const nextNode = this.nodes.find(n => n.id === choice.next);
-      if (nextNode) {
-        this._showNode(nextNode);
-        return;
-      }
-    }
-    this.end();
-  }
-
-  _advance() {
-    this.nodeIndex++;
-    if (this.nodeIndex < this.nodes.length) {
-      this._showNode(this.nodes[this.nodeIndex]);
-    } else {
-      this.end();
-    }
+    if (this.onAction) this.onAction('choice', index);
   }
 
   /**

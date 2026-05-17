@@ -11,6 +11,7 @@ export class GameState {
     this.currentChapter = 0;
     this.unlockedChapters = [0];
     this.choices = [];       // { chapter, chapterId, nodeId, choiceText, impact }
+    this.flags = {};         // custom plot flags
     this.scores = {
       strategy: 0,    // 战略智慧
       diplomacy: 0,   // 外交手腕
@@ -20,6 +21,14 @@ export class GameState {
     };
     this.ending = null;
     this.startTime = Date.now();
+  }
+
+  setFlag(key, value) {
+    this.flags[key] = value;
+  }
+
+  getFlag(key) {
+    return this.flags[key];
   }
 
   recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact) {
@@ -62,6 +71,7 @@ export class GameState {
         unlockedChapters: this.unlockedChapters,
         choices: this.choices,
         scores: this.scores,
+        flags: this.flags,
       }));
     } catch (e) { console.warn('Save failed', e); }
   }
@@ -72,6 +82,7 @@ export class GameState {
       if (!data) return false;
       const parsed = JSON.parse(data);
       Object.assign(this, parsed);
+      if (!this.flags) this.flags = {};
       return true;
     } catch (e) { return false; }
   }
