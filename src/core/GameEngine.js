@@ -24,6 +24,7 @@ export class GameEngine {
     this.player = null;
     this.input = new InputController();
     this.dialogue = null;
+    this.plotEngine = null;
     this.inDialogue = false;
     this.isPaused = false;
     this.onChapterComplete = null;
@@ -59,6 +60,47 @@ export class GameEngine {
 
   setupDialogue(uiElements) {
     this.dialogue = new DialogueSystem(uiElements);
+  }
+
+  setPlotEngine(pe, gameState) {
+    this.plotEngine = pe;
+    pe.onEnterExplore = (node) => {
+      this.inDialogue = false;
+      this.dialogue.hide();
+      if (this.currentChapterScene && this.currentChapterScene.npcs) {
+        this.currentChapterScene.npcs.forEach(n => n.animator && n.animator.setState('idle'));
+      }
+      if (this.currentChapterScene?.playerAnimator) {
+        this.currentChapterScene.playerAnimator.setState('idle');
+      }
+    };
+
+    pe.onShowDialog = (node) => {
+      this.inDialogue = true;
+      this.dialogue.showNode(node, (action, data) => {
+        if (action === 'choice') {
+           const choice = node.choices[data];
+           if (this.currentChapterScene && gameState) {
+             gameState.recordChoice(
+               this.currentChapterScene.index,
+               this.currentChapterScene.id,
+               node.id || 'plot_node',
+               choice.text,
+               choice.impact
+             );
+           }
+           pe.advance(choice.next);
+        } else {
+           pe.advance(node.next);
+        }
+      });
+    };
+
+    pe.onTriggerEvent = (eventName) => {
+       if (this.currentChapterScene && this.currentChapterScene.handleEvent) {
+          this.currentChapterScene.handleEvent(eventName);
+       }
+    };
   }
 
   loadChapterScene(chapterScene) {
@@ -177,37 +219,69 @@ export class GameEngine {
 
   _startDialogue(npc) {
     if (!this.dialogue || !this.currentChapterScene) return;
-    this.inDialogue = true;
-    const nodes = this.currentChapterScene.getDialogue(npc.dialogueId);
-    if (!nodes || nodes.length === 0) return;
 
     if (npc.animator) npc.animator.setState('talk');
     if (this.currentChapterScene.playerAnimator) {
       this.currentChapterScene.playerAnimator.setState('talk');
     }
-    // 玩家面向NPC
     const dx = npc.mesh.position.x - this.player.position.x;
     const dz = npc.mesh.position.z - this.player.position.z;
     this.player.rotation.y = Math.atan2(dx, dz);
 
-    this.dialogue.start(
-      nodes,
-      this.currentChapterScene.index,
-      this.currentChapterScene.id,
-      () => {
+    if (this.plotEngine && this.plotEngine.handleInteract(npc.dialogueId)) {
+      return;
+    }
+
+    // Legacy fallback
+    this.inDialogue = true;
+    const nodes = this.currentChapterScene.getDialogue(npc.dialogueId);
+    if (!nodes || nodes.length === 0) {
+      this.inDialogue = false;
+      return;
+    }
+
+    let nodeIndex = 0;
+    const showLegacyNode = () => {
+      if (nodeIndex >= nodes.length) {
         this.inDialogue = false;
+        this.dialogue.hide();
         if (npc.animator) npc.animator.setState('idle');
         if (this.currentChapterScene?.playerAnimator) {
           this.currentChapterScene.playerAnimator.setState('idle');
         }
-        // 检查章节是否可以完成（所有NPC都对话过）
         this._checkChapterComplete();
+        return;
       }
-    );
+      const node = nodes[nodeIndex];
+      this.dialogue.showNode(node, (action, data) => {
+        if (action === 'choice') {
+           const choice = node.choices[data];
+           import('./GameState.js').then(({gameState}) => {
+             gameState.recordChoice(
+               this.currentChapterScene.index,
+               this.currentChapterScene.id,
+               node.id,
+               choice.text,
+               choice.impact
+             );
+           });
+           if (choice.next) {
+             nodeIndex = nodes.findIndex(n => n.id === choice.next);
+           } else {
+             nodeIndex = nodes.length;
+           }
+           showLegacyNode();
+        } else {
+           nodeIndex++;
+           showLegacyNode();
+        }
+      });
+    };
+    showLegacyNode();
   }
 
   _checkChapterComplete() {
-    // 记录已对话的NPC（简化逻辑：对话完成就可结束章节）
+    // Legacy complete hook
     if (this.onChapterComplete) {
       setTimeout(() => this.onChapterComplete(), 500);
     }

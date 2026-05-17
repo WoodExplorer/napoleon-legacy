@@ -11,6 +11,7 @@ export class Chapter2Scene {
     this.year = '1793年';
     this.npcs = [];
     this.scene = null;
+    this.barrels = [];
   }
 
   build(scene) {
@@ -72,6 +73,7 @@ export class Chapter2Scene {
       wheel.position.set(x, 0.25, 0);
       scene.add(barrel);
       scene.add(wheel);
+      this.barrels.push(barrel);
     });
 
     // 沙袋掩体
@@ -131,5 +133,34 @@ export class Chapter2Scene {
     this.npcs.forEach(n => n.animator && n.animator.update(delta));
   }
 
-  dispose() { this.npcs = []; }
+  handleEvent(eventName) {
+    if (eventName === 'artillery_fire') {
+      // 动态场景效果：开炮特效
+      this.barrels.forEach((barrel, i) => {
+        setTimeout(() => {
+          // 炮口闪光
+          const flash = new THREE.PointLight(0xffaa00, 10, 5);
+          flash.position.set(0, 1.2, 0); // barrel local space relative tip
+          barrel.add(flash);
+          
+          // 炮管后座
+          barrel.position.z += 0.2;
+          
+          setTimeout(() => {
+            barrel.remove(flash);
+            barrel.position.z -= 0.2;
+          }, 100);
+        }, i * 200);
+      });
+      
+      // 屏幕震动
+      const ui = document.getElementById('game-ui');
+      if (ui) {
+         ui.style.animation = 'shake 0.5s';
+         setTimeout(() => ui.style.animation = '', 500);
+      }
+    }
+  }
+
+  dispose() { this.npcs = []; this.barrels = []; }
 }
