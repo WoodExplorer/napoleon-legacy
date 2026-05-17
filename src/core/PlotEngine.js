@@ -32,7 +32,11 @@ export class PlotEngine {
         break;
       case 'event':
         if (this.onTriggerEvent) this.onTriggerEvent(node.eventName);
-        this.advance(node.next);
+        if (node.delay) {
+          setTimeout(() => this.advance(node.next), node.delay);
+        } else {
+          this.advance(node.next);
+        }
         break;
       case 'condition':
         let nextNode = node.defaultNext;

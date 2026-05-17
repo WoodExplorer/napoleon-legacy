@@ -87,6 +87,6 @@ export const plotData = {
     ],
     defaultNext: "ch2_start"
   },
-  "ch2_battle_event": { type: "event", eventName: "artillery_fire", next: "ch2_end" },
+  "ch2_battle_event": { type: "event", eventName: "artillery_fire", delay: 2000, next: "ch2_end" },
   "ch2_end": { type: "chapter_end", nextChapter: 2 },
 };
