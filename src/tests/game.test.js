@@ -259,6 +259,39 @@ import('../core/PlotEngine.js').then(({ PlotEngine }) => {
     assertEqual(engine.currentNodeId, 'dialog1', 'did not transition to dialog');
   });
 
+  test('PlotEngine event delay is respected', () => {
+    const plotData = {
+      start: { type: 'event', eventName: 'boom', delay: 2000, next: 'end' },
+      end: { type: 'chapter_end' }
+    };
+    const engine = new PlotEngine(plotData, {});
+    let triggeredEvent = null;
+    let timeoutCb = null;
+    let timeoutDelay = 0;
+    
+    // Mock setTimeout
+    const originalSetTimeout = global.setTimeout;
+    global.setTimeout = (cb, delay) => {
+      timeoutCb = cb;
+      timeoutDelay = delay;
+    };
+    
+    engine.onTriggerEvent = (e) => { triggeredEvent = e; };
+    engine.start('start');
+    
+    assertEqual(triggeredEvent, 'boom', 'event not triggered');
+    assertEqual(timeoutDelay, 2000, 'delay was not 2000');
+    assert(timeoutCb, 'setTimeout was not called');
+    assert(engine.currentNodeId !== 'end', 'advanced prematurely before timeout');
+    
+    // Trigger the callback manually
+    timeoutCb();
+    assertEqual(engine.currentNodeId, 'end', 'did not advance after delay');
+    
+    // Restore
+    global.setTimeout = originalSetTimeout;
+  });
+
   test('PlotData (Chapter 1) requires talking to both mother and mentor to end chapter', () => {
     const flags = {};
     const mockState = { setFlag: (k, v) => { flags[k] = v; }, getFlag: (k) => flags[k] };
