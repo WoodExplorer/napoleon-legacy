@@ -192,7 +192,8 @@ test('所有章节应有完整字段', () => {
 console.log('\n── PlotEngine 测试 ──');
 
 import('../core/PlotEngine.js').then(({ PlotEngine }) => {
-  test('PlotEngine should initialize and execute explore node', () => {
+  import('../data/plotData.js').then(({ plotData: realPlotData }) => {
+    test('PlotEngine should initialize and execute explore node', () => {
     const plotData = { start: { type: 'explore' } };
     const engine = new PlotEngine(plotData, {});
     let exploreCalled = false;
@@ -258,9 +259,44 @@ import('../core/PlotEngine.js').then(({ PlotEngine }) => {
     assertEqual(engine.currentNodeId, 'dialog1', 'did not transition to dialog');
   });
 
+  test('PlotData (Chapter 1) requires talking to both mother and mentor to end chapter', () => {
+    const flags = {};
+    const mockState = { setFlag: (k, v) => { flags[k] = v; }, getFlag: (k) => flags[k] };
+    const engine = new PlotEngine(realPlotData, mockState);
+    
+    let chapterEnded = false;
+    engine.onChapterEnd = () => { chapterEnded = true; };
+    engine.onShowDialog = () => {};
+    engine.onEnterExplore = () => {};
+
+    // 初始状态
+    engine.start('ch1_start');
+    
+    // 模拟与母亲对话
+    engine.handleInteract('mother'); // 跳转到 ch1_mother_start
+    engine.advance(realPlotData['ch1_mother_start'].next); // 到达 q1
+    engine.advance(realPlotData['ch1_mother_q1'].choices[0].next); // 选择选项1，到达 a1_study
+    engine.advance(realPlotData['ch1_mother_a1_study'].next); // 到达 end 节点 (设置 flag)，并自动跳转验证 condition
+    
+    assert(flags['ch1_talked_mother'], '未正确设置母亲对话标记');
+    assert(!flags['ch1_talked_mentor'], '不应设置导师对话标记');
+    assert(!chapterEnded, '只和母亲对话不应结束章节');
+    assertEqual(engine.currentNodeId, 'ch1_start', '未能返回探索状态');
+
+    // 模拟与导师对话
+    engine.handleInteract('mentor'); // 跳转到 ch1_mentor_start
+    engine.advance(realPlotData['ch1_mentor_start'].next); // 到达 q1
+    engine.advance(realPlotData['ch1_mentor_q1'].choices[0].next); // 选择选项1，到达 b1_france
+    engine.advance(realPlotData['ch1_mentor_b1_france'].next); // 到达 end 节点，设置 flag，验证 condition 通过
+    
+    assert(flags['ch1_talked_mentor'], '未正确设置导师对话标记');
+    assert(chapterEnded, '完成两人对话后应当结束章节');
+  });
+
   // ---- Summary ----
   console.log(`\n${'─'.repeat(30)}`);
   console.log(`测试结果: ${passed} 通过 / ${failed} 失败`);
   if (failed === 0) console.log('🎉 所有测试通过！\n');
   else { console.log(`⚠️  ${failed} 个测试失败\n`); process.exit(1); }
+  });
 });
