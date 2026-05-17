@@ -104,6 +104,10 @@ export class GameEngine {
   }
 
   loadChapterScene(chapterScene) {
+    this.inDialogue = false;
+    this.isPaused = false;
+    if (this.dialogue) this.dialogue.hide();
+
     // 清空旧场景
     if (this.scene) {
       while (this.scene.children.length > 0) {
