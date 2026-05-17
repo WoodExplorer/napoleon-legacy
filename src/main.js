@@ -70,8 +70,9 @@ function showMainMenu() {
 function renderChapterSelect() {
   const list = $('chapter-list');
   if (!list) return;
+  const isDev = import.meta.env.DEV; // Vite env flag
   list.innerHTML = CHAPTERS.map((ch, i) => {
-    const unlocked = gameState.unlockedChapters.includes(i);
+    const unlocked = isDev || gameState.unlockedChapters.includes(i);
     const done = gameState.getChoicesForChapter(i).length > 0;
     return `
       <div class="chapter-card ${unlocked ? '' : 'locked'}" data-idx="${i}">

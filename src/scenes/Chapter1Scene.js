@@ -47,7 +47,7 @@ export class Chapter1Scene {
 
     // NPC: 导师帕斯卡尔·保利
     const mentor = buildNPCCharacter({ clothColor: 0x4a3a6a, pantColor: 0x2a2040, hatColor: 0x2a2040, name: 'paoli' });
-    mentor.position.set(-4, 0, 3);
+    mentor.position.set(-5, 0, 1);
     mentor.rotation.y = Math.PI / 3;
     scene.add(mentor);
     this.npcs.push({ mesh: mentor, name: '帕斯卡尔·保利', animator: new CharacterAnimator(mentor), dialogueId: 'mentor', interactDist: 2.5 });
