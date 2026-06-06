@@ -6,6 +6,7 @@ import {
   resolvePlayerNavigation,
 } from '../core/MovementPhysics.js';
 import { plotData } from '../data/plotData.js';
+import { getSceneRegistryMetadata, loadChapterSceneClass } from '../scenes/SceneRegistry.js';
 import { CHAPTERS } from '../ui/ChapterData.js';
 import {
   DEFAULT_LOCALE,
@@ -23,6 +24,17 @@ let failed = 0;
 function test(name, fn) {
   try {
     fn();
+    console.log(`  ok ${name}`);
+    passed++;
+  } catch (e) {
+    console.log(`  fail ${name}: ${e.message}`);
+    failed++;
+  }
+}
+
+async function testAsync(name, fn) {
+  try {
+    await fn();
     console.log(`  ok ${name}`);
     passed++;
   } catch (e) {
@@ -386,6 +398,34 @@ test('resolves combined bounds and obstacle navigation', () => {
   assertEqual(result.blocked, true);
   assertClose(result.x, 3.25);
   assertClose(result.z, 0);
+});
+
+console.log('\nSceneRegistry');
+test('scene registry maps one lazy loader per chapter', () => {
+  const metadata = getSceneRegistryMetadata();
+  assertEqual(metadata.length, CHAPTERS.length);
+  metadata.forEach((entry, index) => {
+    assertEqual(entry.index, index);
+    assertEqual(entry.lazy, true);
+    assertEqual(typeof entry.loader, 'function');
+  });
+});
+
+await testAsync('loads chapter scene classes on demand', async () => {
+  const SceneClass = await loadChapterSceneClass(0);
+  const scene = new SceneClass();
+  assertEqual(scene.id, 'chapter1');
+  assertEqual(scene.index, 0);
+});
+
+await testAsync('rejects unknown chapter scene indexes', async () => {
+  let rejected = false;
+  try {
+    await loadChapterSceneClass(CHAPTERS.length);
+  } catch (error) {
+    rejected = error instanceof RangeError;
+  }
+  assert(rejected, 'Expected an out-of-range chapter index to reject');
 });
 
 console.log(`\nResult: ${passed} passed / ${failed} failed`);

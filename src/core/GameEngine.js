@@ -505,15 +505,15 @@ export class GameEngine {
       this.dialogue.showNode(node, (action, data) => {
         if (action === 'choice') {
            const choice = node.choices[data];
-           import('./GameState.js').then(({gameState}) => {
-             gameState.recordChoice(
+           if (this.gameState) {
+             this.gameState.recordChoice(
                this.currentChapterScene.index,
                this.currentChapterScene.id,
                node.id,
                choice.text,
                choice.impact
              );
-           });
+           }
            if (choice.next) {
              nodeIndex = nodes.findIndex(n => n.id === choice.next);
            } else {
