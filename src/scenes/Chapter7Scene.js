@@ -33,13 +33,13 @@ export class Chapter7Scene {
     montholon.position.set(3, 0, -2);
     montholon.rotation.y = -Math.PI / 4;
     scene.add(montholon);
-    this.npcs.push({ mesh: montholon, nameKey: 'characters.montholon', animator: new CharacterAnimator(montholon), dialogueId: 'montholon', interactDist: 2.5 });
+    this.npcs.push({ mesh: montholon, nameKey: 'characters.montholon', animator: new CharacterAnimator(montholon), dialogueId: 'montholon', objectiveFlag: 'ch7_talked_montholon', interactDist: 2.5 });
 
     const gourgaud = buildNPCCharacter({ clothColor: 0x4a5a3a, pantColor: 0x2a3a1a, name: 'gourgaud' });
     gourgaud.position.set(-3, 0, 1.5);
     gourgaud.rotation.y = Math.PI / 3;
     scene.add(gourgaud);
-    this.npcs.push({ mesh: gourgaud, nameKey: 'characters.gourgaud', animator: new CharacterAnimator(gourgaud), dialogueId: 'gourgaud', interactDist: 2.5 });
+    this.npcs.push({ mesh: gourgaud, nameKey: 'characters.gourgaud', animator: new CharacterAnimator(gourgaud), dialogueId: 'gourgaud', objectiveFlag: 'ch7_talked_gourgaud', interactDist: 2.5 });
 
     return this.player;
   }

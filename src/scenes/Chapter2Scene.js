@@ -33,13 +33,13 @@ export class Chapter2Scene {
     general.position.set(4, 0, -3);
     general.rotation.y = -Math.PI / 3;
     scene.add(general);
-    this.npcs.push({ mesh: general, nameKey: 'characters.carteaux', animator: new CharacterAnimator(general), dialogueId: 'general', interactDist: 2.5 });
+    this.npcs.push({ mesh: general, nameKey: 'characters.carteaux', animator: new CharacterAnimator(general), dialogueId: 'general', objectiveFlag: 'ch2_talked_gen', interactDist: 2.5 });
 
     const officer = buildNPCCharacter({ clothColor: 0x2a4a6a, pantColor: 0x1a2a3a, name: 'junot' });
     officer.position.set(-3, 0, 2);
     officer.rotation.y = Math.PI / 4;
     scene.add(officer);
-    this.npcs.push({ mesh: officer, nameKey: 'characters.junot', animator: new CharacterAnimator(officer), dialogueId: 'junot', interactDist: 2.5 });
+    this.npcs.push({ mesh: officer, nameKey: 'characters.junot', animator: new CharacterAnimator(officer), dialogueId: 'junot', objectiveFlag: 'ch2_talked_junot', interactDist: 2.5 });
 
     return this.player;
   }

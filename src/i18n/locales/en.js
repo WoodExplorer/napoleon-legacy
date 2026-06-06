@@ -37,6 +37,10 @@ export const en = {
     interact: 'E Interact',
     menu: 'ESC Menu',
   },
+  mission: {
+    kicker: 'Campaign Orders',
+    progress: '{complete}/{total} secured',
+  },
   game: {
     interactPrompt: 'Talk to {name}',
     dialogueContinue: 'Click to continue',

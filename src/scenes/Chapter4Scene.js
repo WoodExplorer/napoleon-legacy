@@ -28,13 +28,13 @@ export class Chapter4Scene {
     berthier.position.set(3, 0, -2);
     berthier.rotation.y = -Math.PI / 4;
     scene.add(berthier);
-    this.npcs.push({ mesh: berthier, nameKey: 'characters.berthier', animator: new CharacterAnimator(berthier), dialogueId: 'berthier', interactDist: 2.5 });
+    this.npcs.push({ mesh: berthier, nameKey: 'characters.berthier', animator: new CharacterAnimator(berthier), dialogueId: 'berthier', objectiveFlag: 'ch4_talked_berthier', interactDist: 2.5 });
 
     const soult = buildNPCCharacter({ clothColor: 0x1a3a5c, pantColor: 0xe8e0d0, name: 'soult' });
     soult.position.set(-3.5, 0, 1.5);
     soult.rotation.y = Math.PI / 3;
     scene.add(soult);
-    this.npcs.push({ mesh: soult, nameKey: 'characters.soult', animator: new CharacterAnimator(soult), dialogueId: 'soult', interactDist: 2.5 });
+    this.npcs.push({ mesh: soult, nameKey: 'characters.soult', animator: new CharacterAnimator(soult), dialogueId: 'soult', objectiveFlag: 'ch4_talked_soult', interactDist: 2.5 });
     return this.player;
   }
 

@@ -37,6 +37,10 @@ export const zhCN = {
     interact: 'E 互动',
     menu: 'ESC 菜单',
   },
+  mission: {
+    kicker: '战役命令',
+    progress: '已完成 {complete}/{total}',
+  },
   game: {
     interactPrompt: '与 {name} 交谈',
     dialogueContinue: '点击继续',
