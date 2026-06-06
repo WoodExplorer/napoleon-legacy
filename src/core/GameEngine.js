@@ -12,6 +12,7 @@ import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
 import { AudioDirector } from './AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from './AutoQuality.js';
+import { computeCameraRigTarget, smoothCameraRigPose } from './CameraRig.js';
 import { loadCameraSensitivity, normalizeCameraSensitivity, saveCameraSensitivity } from './CameraSettings.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import {
@@ -67,6 +68,8 @@ export class GameEngine {
     this.camYaw = 0;
     this.camPitch = CAM_PITCH_DEFAULT;
     this.camDist = CAM_DIST_DEFAULT;
+    this.cameraRigPose = null;
+    this.cameraRigTarget = null;
     this.pointerLook = null;
     this.missionUI = null;
     this.cinematicUI = null;
@@ -176,7 +179,7 @@ export class GameEngine {
       this.pointerLook = { x: e.clientX, y: e.clientY };
       this.camYaw += dx * 0.0045 * this.cameraSensitivity;
       this.camPitch = Math.max(-0.78, Math.min(0.18, this.camPitch + dy * 0.0025 * this.cameraSensitivity));
-      this._updateCamera();
+      this._updateCameraTarget();
     });
     const clearPointer = () => { this.pointerLook = null; };
     this.canvas.addEventListener('pointerup', clearPointer);
@@ -184,7 +187,7 @@ export class GameEngine {
     this.canvas.addEventListener('wheel', e => {
       e.preventDefault();
       this.camDist = Math.max(2.7, Math.min(7.2, this.camDist + e.deltaY * 0.003));
-      this._updateCamera();
+      this._updateCameraTarget();
     }, { passive: false });
   }
 
@@ -359,7 +362,9 @@ export class GameEngine {
     this.camYaw = 0;
     this.camPitch = CAM_PITCH_DEFAULT;
     this.camDist = CAM_DIST_DEFAULT;
-    this._updateCamera();
+    this.cameraRigPose = null;
+    this.cameraRigTarget = null;
+    this._updateCameraTarget({ immediate: true });
     this._updateMissionTracker(true);
   }
 
@@ -412,6 +417,11 @@ export class GameEngine {
       this._checkInteraction();
     }
 
+    if (!this.cinematicIntro) {
+      this._updateCameraTarget();
+      this._applyCameraRig(delta);
+    }
+
     if (this.currentChapterScene) this.currentChapterScene.update(delta);
     this._updateSceneEffects(delta);
     this.audio.updateMovement(delta, { moving: this._isMoving && !this.cinematicIntro, blocked: this._movementBlocked });
@@ -442,7 +452,7 @@ export class GameEngine {
     this.camYaw = pose.yaw;
     this.camPitch = pose.pitch;
     this.camDist = pose.distance;
-    this._updateCamera();
+    this._updateCameraTarget({ immediate: true, moving: false, blocked: false });
   }
 
   _renderCinematicIntro(chapter, progress) {
@@ -503,7 +513,7 @@ export class GameEngine {
       if (anim) anim.setState('idle');
     }
 
-    this._updateCamera();
+    this._updateCameraTarget();
   }
 
   _resolvePlayerNavigation(x, z) {
@@ -535,20 +545,51 @@ export class GameEngine {
       this.camYaw += this.input.lookVector.x * speed * delta * 2;
       this.camPitch = Math.max(-0.8, Math.min(0, this.camPitch - this.input.lookVector.y * speed * delta));
     }
-    this._updateCamera();
+    this._updateCameraTarget();
   }
 
-  _updateCamera() {
+  _getCameraObstacles() {
+    const sceneObstacles = this.currentChapterScene?.collisionObjects || [];
+    const npcObstacles = (this.currentChapterScene?.npcs || []).map(npc => ({
+      type: 'circle',
+      x: npc.mesh.position.x,
+      z: npc.mesh.position.z,
+      radius: npc.collisionRadius ?? NPC_COLLISION_RADIUS,
+    }));
+    return [...sceneObstacles, ...npcObstacles];
+  }
+
+  _updateCameraTarget(options = {}) {
     if (!this.player) return;
-    const px = this.player.position.x;
-    const py = this.player.position.y;
-    const pz = this.player.position.z;
-    const totalYaw = this.player.rotation.y + this.camYaw;
-    const cx = px - Math.sin(totalYaw) * this.camDist * Math.cos(this.camPitch);
-    const cy = py + 2.5 + this.camDist * Math.sin(-this.camPitch);
-    const cz = pz - Math.cos(totalYaw) * this.camDist * Math.cos(this.camPitch);
-    this.camera.position.set(cx, cy, cz);
-    this.camera.lookAt(px, py + 1.2, pz);
+    this.cameraRigTarget = computeCameraRigTarget({
+      playerPosition: this.player.position,
+      playerRotationY: this.player.rotation.y,
+      yawOffset: this.camYaw,
+      pitch: this.camPitch,
+      distance: this.camDist,
+      moving: options.moving ?? this._isMoving,
+      blocked: options.blocked ?? this._movementBlocked,
+      obstacles: this._getCameraObstacles(),
+    });
+    if (options.immediate) {
+      this.cameraRigPose = smoothCameraRigPose(null, this.cameraRigTarget, 0);
+      this._setCameraFromPose(this.cameraRigPose);
+    }
+  }
+
+  _applyCameraRig(delta) {
+    if (!this.cameraRigTarget) return;
+    this.cameraRigPose = smoothCameraRigPose(this.cameraRigPose, this.cameraRigTarget, delta);
+    this._setCameraFromPose(this.cameraRigPose);
+  }
+
+  _setCameraFromPose(pose) {
+    this.camera.position.set(pose.position.x, pose.position.y, pose.position.z);
+    this.camera.lookAt(pose.lookAt.x, pose.lookAt.y, pose.lookAt.z);
+    if (Math.abs(this.camera.fov - pose.fov) > 0.01) {
+      this.camera.fov = pose.fov;
+      this.camera.updateProjectionMatrix();
+    }
   }
 
   _checkInteraction() {

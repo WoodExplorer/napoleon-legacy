@@ -7,6 +7,13 @@ import {
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
 import {
+  clampCameraDistance,
+  computeCameraRigTarget,
+  getSmoothingFactor,
+  resolveCameraDistance,
+  smoothCameraRigPose,
+} from '../core/CameraRig.js';
+import {
   ENHANCED_SUBTITLES_STORAGE_KEY,
   loadEnhancedSubtitles,
   saveEnhancedSubtitles,
@@ -612,6 +619,95 @@ test('quality recommendation cooldown prevents repeated prompts', () => {
   assert(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }));
   controller.dismiss();
   assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }), null);
+});
+
+console.log('\nCameraRig');
+test('camera rig clamps player zoom distance', () => {
+  assertClose(clampCameraDistance(1), 2.35);
+  assertClose(clampCameraDistance(12), 7.2);
+  assertClose(clampCameraDistance(4.2), 4.2);
+});
+
+test('camera rig computes a stable third-person pose behind the player', () => {
+  const target = computeCameraRigTarget({
+    playerPosition: { x: 0, y: 0, z: 0 },
+    playerRotationY: 0,
+    yawOffset: 0,
+    pitch: 0,
+    distance: 4,
+    moving: false,
+    blocked: false,
+    obstacles: [],
+  });
+  assertClose(target.position.x, 0);
+  assertClose(target.position.y, 2.5);
+  assertClose(target.position.z, -4);
+  assertClose(target.lookAt.y, 1.25);
+  assertEqual(target.fov, 65);
+  assertEqual(target.obstructed, false);
+});
+
+test('camera rig shortens distance when scene geometry blocks the chase camera', () => {
+  const clear = resolveCameraDistance({ x: 0, z: 0 }, { x: 0, z: -4 }, 4, []);
+  const blocked = resolveCameraDistance(
+    { x: 0, z: 0 },
+    { x: 0, z: -4 },
+    4,
+    [{ type: 'circle', x: 0, z: -2, radius: 0.5 }]
+  );
+  assertClose(clear, 4);
+  assert(blocked < clear, 'Expected obstacle to shorten the camera distance');
+  assert(blocked >= 2.35, 'Camera distance should never collapse inside the player');
+});
+
+test('camera rig exposes motion and blocked feedback through field of view', () => {
+  const idle = computeCameraRigTarget({
+    playerPosition: { x: 0, y: 0, z: 0 },
+    distance: 4,
+    obstacles: [],
+  });
+  const moving = computeCameraRigTarget({
+    playerPosition: { x: 0, y: 0, z: 0 },
+    distance: 4,
+    moving: true,
+    obstacles: [],
+  });
+  const blocked = computeCameraRigTarget({
+    playerPosition: { x: 0, y: 0, z: 0 },
+    distance: 4,
+    moving: true,
+    blocked: true,
+    obstacles: [],
+  });
+  assert(moving.fov > idle.fov);
+  assert(blocked.fov < moving.fov);
+});
+
+test('camera rig smoothing moves poses toward the target without snapping', () => {
+  const factor = getSmoothingFactor(1 / 60, 10);
+  assert(factor > 0 && factor < 1);
+
+  const next = smoothCameraRigPose(
+    {
+      position: { x: 0, y: 0, z: 0 },
+      lookAt: { x: 0, y: 1, z: 0 },
+      fov: 65,
+      distance: 4,
+      obstructed: false,
+    },
+    {
+      position: { x: 10, y: 4, z: -5 },
+      lookAt: { x: 2, y: 1.5, z: 1 },
+      fov: 70,
+      distance: 5,
+      obstructed: true,
+    },
+    1 / 60
+  );
+  assert(next.position.x > 0 && next.position.x < 10);
+  assert(next.lookAt.z > 0 && next.lookAt.z < 1);
+  assert(next.fov > 65 && next.fov < 70);
+  assertEqual(next.obstructed, true);
 });
 
 console.log('\nCameraSettings');
