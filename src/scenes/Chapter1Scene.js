@@ -21,6 +21,9 @@ export class Chapter1Scene {
 
     const ground = SceneBuilder.createGround(0x5a8a3f, 50);
     scene.add(ground);
+    SceneBuilder.createPath(scene, [[-8, 3], [-3, 1], [0, -0.5], [5, -3]], 1.1, 0xa18a63);
+    SceneBuilder.createInstancedFoliage(scene, { count: 140, spread: 42, color: 0x3f7a38 });
+    SceneBuilder.createAtmosphere(scene, { count: 90, spread: 34, height: 5, color: 0xffe0a0, size: 0.055, speed: 0.12, opacity: 0.35 });
 
     // 地中海风格建筑
     this._buildVillage(scene);
@@ -92,6 +95,11 @@ export class Chapter1Scene {
       p.position.set(i * 0.9, 0.025, -0.5);
       scene.add(p);
     }
+
+    const banner = SceneBuilder.createBanner(0x244f8f);
+    banner.position.set(3.6, 0, -1.4);
+    banner.rotation.y = -Math.PI / 8;
+    scene.add(banner);
   }
 
   update(delta) {

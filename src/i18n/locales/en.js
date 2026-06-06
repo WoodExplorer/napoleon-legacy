@@ -33,7 +33,7 @@ export const en = {
   },
   hud: {
     move: 'Arrows Move',
-    camera: 'WASD Camera',
+    camera: 'WASD / Drag Camera',
     interact: 'E Interact',
     menu: 'ESC Menu',
   },

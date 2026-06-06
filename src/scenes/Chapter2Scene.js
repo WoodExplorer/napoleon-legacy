@@ -20,6 +20,8 @@ export class Chapter2Scene {
 
     const ground = SceneBuilder.createGround(0x8b7355, 50);
     scene.add(ground);
+    SceneBuilder.createPath(scene, [[-6, 1.5], [-1, -0.5], [4, -3], [8, -5]], 1.4, 0x7d684e);
+    SceneBuilder.createAtmosphere(scene, { count: 170, spread: 42, height: 7, color: 0xd0b08a, size: 0.12, speed: 0.08, opacity: 0.28 });
     this._buildFortress(scene);
 
     this.player = buildNapoleonCharacter();
@@ -86,12 +88,16 @@ export class Chapter2Scene {
     }
 
     // 远处港口水面
-    const waterGeo = new THREE.PlaneGeometry(30, 15);
-    const waterMat = new THREE.MeshStandardMaterial({ color: 0x1a4a6a, roughness: 0.3, metalness: 0.4 });
-    const water = new THREE.Mesh(waterGeo, waterMat);
-    water.rotation.x = -Math.PI / 2;
+    const water = SceneBuilder.createAnimatedWater(30, 15, 0x1a4a6a);
     water.position.set(0, 0.02, -20);
     scene.add(water);
+
+    [-2.8, 2.8].forEach(x => {
+      const banner = SceneBuilder.createBanner(0x1a3a9a);
+      banner.position.set(x, 0, -1.8);
+      banner.rotation.y = x > 0 ? -0.3 : 0.3;
+      scene.add(banner);
+    });
   }
 
   update(delta) {

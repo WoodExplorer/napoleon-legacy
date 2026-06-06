@@ -14,6 +14,8 @@ export class Chapter3Scene {
     SceneBuilder.createSkybox(scene, 0x5a7ab5, 0xd4c8a0);
     SceneBuilder.addFog(scene, 0xc8c0a8, 30, 70);
     scene.add(SceneBuilder.createGround(0x8a7a60, 50));
+    SceneBuilder.createPath(scene, [[-7, 2], [-2, 0], [0, -2], [0, -8]], 1.35, 0xc8bca4);
+    SceneBuilder.createAtmosphere(scene, { count: 70, spread: 26, height: 7, color: 0xffe6b0, size: 0.075, speed: 0.04, opacity: 0.26 });
     this._buildPalace(scene);
     this.player = buildNapoleonCharacter();
     this.player.position.set(0, 0, 0);
@@ -73,6 +75,12 @@ export class Chapter3Scene {
     carpet.rotation.x = -Math.PI / 2;
     carpet.position.set(0, 0.02, -1);
     scene.add(carpet);
+
+    [-4.8, 4.8].forEach(x => {
+      const banner = SceneBuilder.createBanner(0x244f8f);
+      banner.position.set(x, 0, -5.2);
+      scene.add(banner);
+    });
   }
 
   update(delta) {
