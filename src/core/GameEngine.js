@@ -20,7 +20,7 @@ export class GameEngine {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
-    this.clock = new THREE.Clock();
+    this.lastFrameTime = performance.now();
     this.currentChapterScene = null;
     this.player = null;
     this.input = new InputController();
@@ -32,6 +32,7 @@ export class GameEngine {
     this.camYaw = 0;
     this.camPitch = CAM_PITCH_DEFAULT;
     this.camDist = CAM_DIST_DEFAULT;
+    this.pointerLook = null;
     this._rafId = null;
     this._init();
   }
@@ -42,7 +43,7 @@ export class GameEngine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.2;
@@ -51,6 +52,33 @@ export class GameEngine {
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 200);
 
     window.addEventListener('resize', () => this._onResize());
+    this._bindPointerCamera();
+  }
+
+  _bindPointerCamera() {
+    this.canvas.addEventListener('contextmenu', e => e.preventDefault());
+    this.canvas.addEventListener('pointerdown', e => {
+      if (e.button !== 0 && e.button !== 2) return;
+      this.pointerLook = { x: e.clientX, y: e.clientY };
+      this.canvas.setPointerCapture?.(e.pointerId);
+    });
+    this.canvas.addEventListener('pointermove', e => {
+      if (!this.pointerLook || this.inDialogue || this.isPaused) return;
+      const dx = e.clientX - this.pointerLook.x;
+      const dy = e.clientY - this.pointerLook.y;
+      this.pointerLook = { x: e.clientX, y: e.clientY };
+      this.camYaw += dx * 0.0045;
+      this.camPitch = Math.max(-0.78, Math.min(0.18, this.camPitch + dy * 0.0025));
+      this._updateCamera();
+    });
+    const clearPointer = () => { this.pointerLook = null; };
+    this.canvas.addEventListener('pointerup', clearPointer);
+    this.canvas.addEventListener('pointercancel', clearPointer);
+    this.canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      this.camDist = Math.max(2.7, Math.min(7.2, this.camDist + e.deltaY * 0.003));
+      this._updateCamera();
+    }, { passive: false });
   }
 
   _onResize() {
@@ -129,6 +157,7 @@ export class GameEngine {
 
   start() {
     if (this._rafId) cancelAnimationFrame(this._rafId);
+    this.lastFrameTime = performance.now();
     this._loop();
   }
 
@@ -138,7 +167,9 @@ export class GameEngine {
 
   _loop() {
     this._rafId = requestAnimationFrame(() => this._loop());
-    const delta = Math.min(this.clock.getDelta(), 0.05);
+    const now = performance.now();
+    const delta = Math.min((now - this.lastFrameTime) / 1000, 0.05);
+    this.lastFrameTime = now;
 
     if (!this.isPaused && !this.inDialogue) {
       this._handleMovement(delta);
@@ -147,7 +178,15 @@ export class GameEngine {
     }
 
     if (this.currentChapterScene) this.currentChapterScene.update(delta);
+    this._updateSceneEffects(delta);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  _updateSceneEffects(delta) {
+    if (!this.scene) return;
+    this.scene.traverse(object => {
+      if (typeof object.userData?.tick === 'function') object.userData.tick(delta, object);
+    });
   }
 
   _handleMovement(delta) {

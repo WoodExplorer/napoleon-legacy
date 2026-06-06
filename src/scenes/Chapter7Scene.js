@@ -19,6 +19,9 @@ export class Chapter7Scene {
     SceneBuilder.createSkybox(scene, 0x4a9ad4, 0x7acfa0);
     SceneBuilder.addFog(scene, 0x9ad4c8, 30, 70);
     scene.add(SceneBuilder.createGround(0x5a8a5a, 60));
+    SceneBuilder.createPath(scene, [[-5, 1], [-1, -1], [2, -2], [6, -6]], 1.05, 0x8a7655);
+    SceneBuilder.createInstancedFoliage(scene, { count: 120, spread: 38, color: 0x3f7445 });
+    SceneBuilder.createAtmosphere(scene, { count: 120, spread: 44, height: 6, color: 0xc6f7ff, size: 0.07, speed: 0.18, opacity: 0.36 });
     this._buildIsland(scene);
 
     this.player = buildNapoleonCharacter();
@@ -55,10 +58,7 @@ export class Chapter7Scene {
     scene.add(roof);
 
     // 海洋
-    const oceanGeo = new THREE.PlaneGeometry(60, 30);
-    const oceanMat = new THREE.MeshStandardMaterial({ color: 0x1a6090, roughness: 0.2, metalness: 0.3 });
-    const ocean = new THREE.Mesh(oceanGeo, oceanMat);
-    ocean.rotation.x = -Math.PI / 2;
+    const ocean = SceneBuilder.createAnimatedWater(60, 30, 0x1a6090);
     ocean.position.set(0, 0.02, -25);
     scene.add(ocean);
 

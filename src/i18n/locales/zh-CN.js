@@ -33,7 +33,7 @@ export const zhCN = {
   },
   hud: {
     move: '方向键移动',
-    camera: 'WASD 视角',
+    camera: 'WASD / 拖拽视角',
     interact: 'E 互动',
     menu: 'ESC 菜单',
   },

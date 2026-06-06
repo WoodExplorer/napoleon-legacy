@@ -15,6 +15,9 @@ export class Chapter4Scene {
     SceneBuilder.createSkybox(scene, 0x3a4a6a, 0x9aaa8a);
     SceneBuilder.addFog(scene, 0xa0a890, 20, 55);
     scene.add(SceneBuilder.createGround(0x7a8a6a, 60));
+    SceneBuilder.createPath(scene, [[-7, 1], [-2, -1], [1, -4], [6, -8]], 1.2, 0x6d6550);
+    SceneBuilder.createAtmosphere(scene, { count: 220, spread: 50, height: 8, color: 0xb0a090, size: 0.14, speed: 0.035, opacity: 0.32 });
+    SceneBuilder.createInstancedFoliage(scene, { count: 80, spread: 42, color: 0x596f48 });
     this._buildBattlefield(scene);
     this.player = buildNapoleonCharacter();
     this.player.position.set(0, 0, 0);
@@ -55,6 +58,13 @@ export class Chapter4Scene {
     flag.position.set(0.6, 2.8, -1);
     scene.add(flag);
     this._waveFlag = flag;
+
+    [-5, 5].forEach(x => {
+      const banner = SceneBuilder.createBanner(0x1a3a9a);
+      banner.position.set(x, 0, -3);
+      banner.rotation.y = x > 0 ? -0.2 : 0.2;
+      scene.add(banner);
+    });
 
     // 远处军队轮廓
     [-6, -3, 3, 6].forEach(x => {

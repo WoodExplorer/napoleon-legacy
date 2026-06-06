@@ -19,6 +19,8 @@ export class Chapter5Scene {
     SceneBuilder.createSkybox(scene, 0x8090b0, 0xd0d8e0);
     SceneBuilder.addFog(scene, 0xd0d8e8, 15, 40);
     scene.add(SceneBuilder.createGround(0xe8eef5, 60));
+    SceneBuilder.createPath(scene, [[-6, 2], [-2, 0], [3, -4], [7, -8]], 1.3, 0xd3d7da);
+    SceneBuilder.createAtmosphere(scene, { count: 260, spread: 46, height: 9, color: 0xffffff, size: 0.075, speed: 0.75, opacity: 0.7 });
     this._buildMoscow(scene);
     this.player = buildNapoleonCharacter();
     this.player.position.set(0, 0, 0);
@@ -94,6 +96,8 @@ export class Chapter6Scene {
     SceneBuilder.createSkybox(scene, 0x4a3a2a, 0x8a6a4a);
     SceneBuilder.addFog(scene, 0x8a7a6a, 18, 45);
     scene.add(SceneBuilder.createGround(0x6a5a3a, 60));
+    SceneBuilder.createPath(scene, [[-7, 1], [-2, -1], [2, -4], [7, -9]], 1.45, 0x4e4434);
+    SceneBuilder.createAtmosphere(scene, { count: 240, spread: 48, height: 7, color: 0x7c6a58, size: 0.16, speed: 0.045, opacity: 0.34 });
     this._buildWaterloo(scene);
     this.player = buildNapoleonCharacter();
     this.player.position.set(0, 0, 0);
@@ -130,6 +134,13 @@ export class Chapter6Scene {
       sm.scale.set(1+Math.random()*2, 1+Math.random(), 1+Math.random()*1.5);
       scene.add(sm);
     }
+
+    [-4, 4].forEach(x => {
+      const banner = SceneBuilder.createBanner(0x233f73);
+      banner.position.set(x, 0, -2.5);
+      banner.rotation.y = x > 0 ? -0.35 : 0.35;
+      scene.add(banner);
+    });
   }
 
   update(delta) {
