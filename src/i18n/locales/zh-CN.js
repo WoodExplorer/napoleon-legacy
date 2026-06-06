@@ -63,6 +63,7 @@ export const zhCN = {
     graphicsQuality: '画质',
     autoQuality: '自动画质',
     cameraSensitivity: '镜头灵敏度',
+    enhancedSubtitles: '增强字幕',
     on: '开',
     off: '关',
   },

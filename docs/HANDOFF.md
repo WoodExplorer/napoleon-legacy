@@ -19,7 +19,8 @@
 - add optional auto quality
 - add low-FPS quality recommendation
 - add auto quality adjustment feedback
-- latest: add camera sensitivity settings
+- add camera sensitivity settings
+- latest: add enhanced subtitles setting
 
 ## What Changed
 
@@ -61,6 +62,8 @@
 - Added a localized auto-quality adjustment toast so players are told when Auto Quality lowers graphics to a safer preset.
 - Added `src/core/CameraSettings.js` for tested camera sensitivity persistence, range clamping, and percentage formatting.
 - Added a settings-panel camera sensitivity slider that affects mouse drag, keyboard camera turn, and mobile look speed.
+- Added `src/core/AccessibilitySettings.js` for tested enhanced-subtitle persistence and a settings-panel toggle.
+- Added enhanced subtitle styling for dialogue text: larger copy, stronger backdrop, higher-contrast continuation hint, and immediate body-class application.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -74,7 +77,7 @@ npm run build
 
 Test result:
 
-- 48 passed / 0 failed
+- 49 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5175/`:
 
@@ -96,6 +99,7 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Low-FPS recommendation toast is present, localized, hidden by default, and does not disturb the first chapter HUD layout when inactive; prompt trigger/cooldown behavior is covered by unit tests.
 - Auto-quality adjustment toast shell is present, localized through the shared translation system, hidden by default, and does not disturb the first chapter HUD layout when inactive.
 - Camera sensitivity slider renders in the settings panel, defaults to 100%, updates to 140% when dragged, persists before chapter load, and the first chapter still renders without console errors.
+- Enhanced subtitles toggle renders in settings, switches from Off to On, applies the `enhanced-subtitles` body class immediately, and increases dialogue text sizing without console errors.
 
 ## Known Notes
 
@@ -113,4 +117,4 @@ npm run dev -- --host 127.0.0.1
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
-- Add subtitle display and accessibility contrast controls to the settings panel.
+- Add accessibility contrast controls to the settings panel.
