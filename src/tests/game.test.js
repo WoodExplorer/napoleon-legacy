@@ -7,6 +7,11 @@ import {
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
 import {
+  ENHANCED_SUBTITLES_STORAGE_KEY,
+  loadEnhancedSubtitles,
+  saveEnhancedSubtitles,
+} from '../core/AccessibilitySettings.js';
+import {
   CAMERA_SENSITIVITY_STORAGE_KEY,
   DEFAULT_CAMERA_SENSITIVITY,
   formatCameraSensitivity,
@@ -640,6 +645,28 @@ test('persists camera sensitivity while tolerating broken storage', () => {
   };
   assertEqual(loadCameraSensitivity(brokenStorage), DEFAULT_CAMERA_SENSITIVITY);
   assertEqual(saveCameraSensitivity(0.8, brokenStorage), 0.8);
+});
+
+console.log('\nAccessibilitySettings');
+test('persists enhanced subtitles while tolerating broken storage', () => {
+  const storage = {
+    values: {},
+    getItem(key) { return this.values[key] ?? null; },
+    setItem(key, value) { this.values[key] = value; },
+  };
+  assertEqual(loadEnhancedSubtitles(storage), false);
+  assertEqual(saveEnhancedSubtitles(true, storage), true);
+  assertEqual(storage.values[ENHANCED_SUBTITLES_STORAGE_KEY], 'true');
+  assertEqual(loadEnhancedSubtitles(storage), true);
+  assertEqual(saveEnhancedSubtitles(false, storage), false);
+  assertEqual(loadEnhancedSubtitles(storage), false);
+
+  const brokenStorage = {
+    getItem() { throw new Error('blocked'); },
+    setItem() { throw new Error('blocked'); },
+  };
+  assertEqual(loadEnhancedSubtitles(brokenStorage), false);
+  assertEqual(saveEnhancedSubtitles(true, brokenStorage), true);
 });
 
 console.log('\nPerformanceMonitor');

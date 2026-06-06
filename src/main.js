@@ -2,6 +2,10 @@
  * main.js - 游戏入口，UI流程管理
  */
 import './style.css';
+import {
+  loadEnhancedSubtitles,
+  saveEnhancedSubtitles,
+} from './core/AccessibilitySettings.js';
 import { gameState } from './core/GameState.js';
 import { MobileJoystick } from './controls/InputController.js';
 import { CHAPTERS, getChapter } from './ui/ChapterData.js';
@@ -85,14 +89,24 @@ function getCameraSensitivity() {
   return engine?.getCameraSensitivity?.() ?? loadCameraSensitivity();
 }
 
+function getEnhancedSubtitlesEnabled() {
+  return loadEnhancedSubtitles();
+}
+
+function applyAccessibilityPreferences() {
+  document.body.classList.toggle('enhanced-subtitles', getEnhancedSubtitlesEnabled());
+}
+
 function renderSettingsPanel() {
   const list = $('settings-graphics-options');
   const autoToggle = $('settings-auto-quality');
+  const subtitlesToggle = $('settings-enhanced-subtitles');
   const sensitivityInput = $('settings-camera-sensitivity');
   const sensitivityValue = $('settings-camera-sensitivity-value');
-  if (!list || !autoToggle || !sensitivityInput || !sensitivityValue) return;
+  if (!list || !autoToggle || !subtitlesToggle || !sensitivityInput || !sensitivityValue) return;
   const activeQuality = getActiveGraphicsQuality();
   const autoEnabled = getAutoGraphicsEnabled();
+  const subtitlesEnabled = getEnhancedSubtitlesEnabled();
   const sensitivity = getCameraSensitivity();
   list.innerHTML = getGraphicsPresetOptions().map(preset => `
     <button
@@ -115,6 +129,9 @@ function renderSettingsPanel() {
   autoToggle.classList.toggle('active', autoEnabled);
   autoToggle.setAttribute('aria-pressed', String(autoEnabled));
   autoToggle.querySelector('.settings-switch-state').textContent = t(autoEnabled ? 'settings.on' : 'settings.off');
+  subtitlesToggle.classList.toggle('active', subtitlesEnabled);
+  subtitlesToggle.setAttribute('aria-pressed', String(subtitlesEnabled));
+  subtitlesToggle.querySelector('.settings-switch-state').textContent = t(subtitlesEnabled ? 'settings.on' : 'settings.off');
   sensitivityInput.value = String(sensitivity);
   sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
 }
@@ -142,6 +159,13 @@ function setCameraSensitivityFromSettings(value) {
   const sensitivityValue = $('settings-camera-sensitivity-value');
   if (sensitivityValue) sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
   return sensitivity;
+}
+
+function setEnhancedSubtitlesFromSettings(enabled) {
+  const value = saveEnhancedSubtitles(enabled);
+  applyAccessibilityPreferences();
+  renderSettingsPanel();
+  return value;
 }
 
 function openSettingsPanel(returnTarget = 'main') {
@@ -481,6 +505,10 @@ $('settings-auto-quality')?.addEventListener('click', () => {
   setAutoGraphicsFromSettings(!getAutoGraphicsEnabled());
 });
 
+$('settings-enhanced-subtitles')?.addEventListener('click', () => {
+  setEnhancedSubtitlesFromSettings(!getEnhancedSubtitlesEnabled());
+});
+
 $('settings-camera-sensitivity')?.addEventListener('input', event => {
   setCameraSensitivityFromSettings(event.target.value);
 });
@@ -513,5 +541,6 @@ document.querySelectorAll('[data-locale]').forEach(button => {
 onLocaleChange(refreshVisibleText);
 
 // ---- Boot ----
+applyAccessibilityPreferences();
 refreshVisibleText();
 simulateLoading();

@@ -63,6 +63,7 @@ export const en = {
     graphicsQuality: 'Graphics Quality',
     autoQuality: 'Auto Quality',
     cameraSensitivity: 'Camera Sensitivity',
+    enhancedSubtitles: 'Enhanced Subtitles',
     on: 'On',
     off: 'Off',
   },

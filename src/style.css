@@ -430,6 +430,16 @@ html, body {
 #dialogue-text { font-family: var(--font-body); font-size: 1.15rem; line-height: 1.8; color: var(--text-primary); min-height: 3.5rem; }
 .dialogue-cursor { color: var(--gold); margin-top: 0.5rem; animation: bounce 1s ease infinite; font-size: 0.8rem; }
 .dialogue-skip-hint { font-size: 0.72rem; color: rgba(255,255,255,0.3); margin-top: 0.5rem; }
+body.enhanced-subtitles #dialogue-box {
+  background: linear-gradient(180deg, rgba(5,13,21,0.18) 0%, rgba(5,13,21,0.99) 100%);
+  padding-bottom: 3rem;
+}
+body.enhanced-subtitles #dialogue-text {
+  font-size: 1.34rem; line-height: 1.9; text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+}
+body.enhanced-subtitles .dialogue-skip-hint {
+  color: rgba(240,232,213,0.62); font-size: 0.8rem;
+}
 #dialogue-choices { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
 .choice-btn {
   background: rgba(13,27,42,0.9); border: 1px solid var(--glass-border); color: var(--text-primary);
