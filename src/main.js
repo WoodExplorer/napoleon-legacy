@@ -2,24 +2,13 @@
  * main.js - 游戏入口，UI流程管理
  */
 import './style.css';
-import { GameEngine } from './core/GameEngine.js';
 import { gameState } from './core/GameState.js';
 import { MobileJoystick } from './controls/InputController.js';
 import { CHAPTERS, getChapter } from './ui/ChapterData.js';
 import { renderSummary } from './ui/SummaryUI.js';
 import { applyTranslations } from './i18n/dom.js';
 import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
-import { Chapter1Scene } from './scenes/Chapter1Scene.js';
-import { Chapter2Scene } from './scenes/Chapter2Scene.js';
-import { Chapter3Scene } from './scenes/Chapter3Scene.js';
-import { Chapter4Scene } from './scenes/Chapter4Scene.js';
-import { Chapter5Scene, Chapter6Scene } from './scenes/Chapter56Scene.js';
-import { Chapter7Scene } from './scenes/Chapter7Scene.js';
-
-const SCENE_CLASSES = [
-  Chapter1Scene, Chapter2Scene, Chapter3Scene, Chapter4Scene,
-  Chapter5Scene, Chapter6Scene, Chapter7Scene,
-];
+import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
 
 // ---- DOM Elements ----
 const $ = id => document.getElementById(id);
@@ -35,6 +24,7 @@ const chapterComplete = $('chapter-complete');
 const mobileControls = $('mobile-controls');
 
 let engine = null;
+let engineReadyPromise = null;
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({
@@ -98,6 +88,18 @@ function showMainMenu() {
   if (gameState.hasSave()) $('btn-continue')?.classList.remove('hidden');
 }
 
+function showChapterLoading(message = t('loading.chapter')) {
+  loadingScreen.classList.remove('hidden');
+  const bar = $('loading-bar');
+  const txt = $('loading-text');
+  if (bar) bar.style.width = '72%';
+  if (txt) txt.textContent = message;
+}
+
+function hideChapterLoading() {
+  loadingScreen.classList.add('hidden');
+}
+
 // ---- Chapter Select ----
 function renderChapterSelect() {
   const list = $('chapter-list');
@@ -126,8 +128,38 @@ function renderChapterSelect() {
 }
 
 // ---- Start Chapter ----
-function startChapter(index) {
+async function ensureEngine() {
+  if (engine) return engine;
+  if (!engineReadyPromise) {
+    engineReadyPromise = import('./core/GameEngine.js').then(({ GameEngine }) => {
+      const created = new GameEngine(gameCanvas);
+      created.setupDialogue({
+        box: $('dialogue-box'),
+        speaker: $('dialogue-speaker'),
+        text: $('dialogue-text'),
+        choices: $('dialogue-choices'),
+        portrait: $('portrait-canvas'),
+        skipHint: document.querySelector('.dialogue-skip-hint'),
+      });
+      created.setupMissionTracker({
+        panel: $('mission-panel'),
+        list: $('mission-list'),
+        progressFill: $('mission-progress-fill'),
+        progressText: $('mission-progress-text'),
+      });
+      setupMobileControls();
+      setupPauseMenu();
+      engine = created;
+      return engine;
+    });
+  }
+  return engineReadyPromise;
+}
+
+// ---- Start Chapter ----
+async function startChapter(index) {
   gameState.currentChapter = index;
+  showChapterLoading();
 
   // Hide all UI
   [mainMenu, chapterSelect, finalSummary, aboutScreen].forEach(el => el?.classList.add('hidden'));
@@ -141,55 +173,46 @@ function startChapter(index) {
   $('hud-chapter-num').textContent = ch.number;
   $('hud-chapter-name').textContent = ch.title;
 
-  // Create engine if needed
-  let pe;
-  if (!engine) {
-    engine = new GameEngine(gameCanvas);
-    engine.setupDialogue({
-      box: $('dialogue-box'),
-      speaker: $('dialogue-speaker'),
-      text: $('dialogue-text'),
-      choices: $('dialogue-choices'),
-      portrait: $('portrait-canvas'),
-      skipHint: document.querySelector('.dialogue-skip-hint'),
-    });
-    engine.setupMissionTracker({
-      panel: $('mission-panel'),
-      list: $('mission-list'),
-      progressFill: $('mission-progress-fill'),
-      progressText: $('mission-progress-text'),
-    });
-    setupMobileControls();
-    setupPauseMenu();
+  try {
+    const [
+      readyEngine,
+      { PlotEngine },
+      { plotData },
+      SceneClass,
+    ] = await Promise.all([
+      ensureEngine(),
+      import('./core/PlotEngine.js'),
+      import('./data/plotData.js'),
+      loadChapterSceneClass(index),
+    ]);
+
+    const pe = new PlotEngine(plotData, gameState);
+    readyEngine.setPlotEngine(pe, gameState);
+
+    pe.onChapterEnd = () => {
+      readyEngine.pause();
+      showChapterComplete(index);
+    };
+
+    const scene = new SceneClass();
+    readyEngine.loadChapterScene(scene);
+    readyEngine.start();
+
+    const startNodeId = `ch${index + 1}_start`;
+    if (plotData[startNodeId]) {
+      pe.start(startNodeId);
+    } else {
+      readyEngine.onChapterComplete = () => showChapterComplete(index);
+    }
+    hideChapterLoading();
+  } catch (error) {
+    console.error('Failed to load chapter', error);
+    hideChapterLoading();
+    gameCanvas.classList.add('hidden');
+    gameUI.classList.add('hidden');
+    chapterSelect.classList.remove('hidden');
+    renderChapterSelect();
   }
-
-  // Use dynamic import or static import for PlotEngine and plotData
-  // Since we use ES modules, we can import dynamically
-  import('./core/PlotEngine.js').then(({ PlotEngine }) => {
-    import('./data/plotData.js').then(({ plotData }) => {
-      pe = new PlotEngine(plotData, gameState);
-      engine.setPlotEngine(pe, gameState);
-      
-      pe.onChapterEnd = (nextChapterIndex) => {
-         engine.pause();
-         showChapterComplete(index);
-      };
-
-      const SceneClass = SCENE_CLASSES[index];
-      const scene = new SceneClass();
-      engine.loadChapterScene(scene);
-      engine.start();
-
-      // Start plot engine if this chapter has a start node
-      const startNodeId = `ch${index + 1}_start`;
-      if (plotData[startNodeId]) {
-         pe.start(startNodeId);
-      } else {
-         // Fallback legacy setup
-         engine.onChapterComplete = () => showChapterComplete(index);
-      }
-    });
-  });
 
   // Show mobile on touch device
   if ('ontouchstart' in window) {

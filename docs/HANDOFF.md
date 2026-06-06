@@ -9,7 +9,8 @@
 - `e1eb512 Add localized narrative resources`
 - `b2cc72d Enhance 3D scene atmosphere`
 - `8aad011 Add campaign mission director`
-- latest: add world navigation boundaries and collision
+- `0ffbb7f Add world navigation constraints`
+- latest: add lazy chapter loading and split 3D engine chunks
 
 ## What Changed
 
@@ -28,6 +29,11 @@
 - Added `src/core/MovementPhysics.js` for tested world bounds, circle collision, box collision, and combined navigation resolution.
 - Added chapter-level `worldBounds` and `collisionObjects` across all seven scenes for major buildings, terrain props, water edges, hills, trees, benches, banners, and NPC blockers.
 - Updated movement handling so the player is constrained by scene geometry and does not keep walking in place when fully blocked.
+- Added `src/scenes/SceneRegistry.js` so chapters load through dynamic imports instead of static entrypoint imports.
+- Converted `GameEngine` to a lazy import so Three.js and postprocessing code load when a chapter starts, not on the main menu.
+- Reworked `startChapter` to load the engine, plot engine, plot data, and selected chapter scene in parallel with a localized chapter-loading overlay.
+- Removed the legacy dynamic `GameState.js` fallback import from `GameEngine`, replacing it with the active `gameState` reference passed into the engine.
+- Tuned Vite's chunk warning budget to account for the expected isolated Three.js vendor chunk while keeping app chunks small.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -41,7 +47,7 @@ npm run build
 
 Test result:
 
-- 24 passed / 0 failed
+- 27 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5174/`:
 
@@ -52,11 +58,11 @@ Browser checks performed at `http://127.0.0.1:5174/`:
 - Campaign orders HUD renders on desktop and mobile with `0/2 secured`, target names, and distances.
 - Screenshot pixel checks confirmed nonblank desktop and mobile scene renders.
 - Fresh browser console check showed no new warnings or errors after replacing deprecated Three.js usages.
+- Production build now emits separate chunks for the main menu, GameEngine, PlotEngine, plot data, Three.js, and each chapter scene.
 
 ## Known Notes
 
-- `npm run build` still reports Vite bundle-size guidance because the main Three.js game chunk is over 500 kB.
-- Vite also reports an ineffective dynamic import warning for `GameState.js`; it is already statically imported elsewhere, so the dynamic import in legacy fallback code does not split it into a separate chunk.
+- The Three.js vendor chunk is still large by nature, but it is no longer part of the initial main menu chunk.
 - The dev server was started with:
 
 ```bash
@@ -65,7 +71,7 @@ npm run dev -- --host 127.0.0.1
 
 ## Suggested Next Steps
 
-- Consider splitting scene code by chapter so the initial bundle is smaller.
+- Consider adding prefetching for the next unlocked chapter after the current scene becomes interactive.
 - Replace the legacy dialogue fallback paths with the data-driven `PlotEngine` path everywhere.
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
-- Add more physical scene boundaries or collision constraints so the player cannot walk through set pieces.
+- Add authored loading-screen art or per-chapter intro shots while lazy chunks are loading.

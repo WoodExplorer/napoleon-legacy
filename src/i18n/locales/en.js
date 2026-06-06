@@ -15,6 +15,7 @@ export const en = {
     chinese: 'Chinese',
   },
   loading: {
+    chapter: 'Deploying the chapter scene...',
     steps: [
       'Initializing the Three.js renderer...',
       'Building historical scenes...',

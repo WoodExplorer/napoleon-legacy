@@ -15,6 +15,7 @@ export const zhCN = {
     chinese: '中文',
   },
   loading: {
+    chapter: '正在部署章节场景...',
     steps: [
       '初始化 Three.js 渲染引擎...',
       '构建历史场景...',
