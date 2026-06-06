@@ -50,6 +50,12 @@ export const zhCN = {
     mute: '静音',
     enable: '开启声音',
   },
+  graphics: {
+    qualityLabel: '画质：{quality}',
+    low: '低',
+    balanced: '均衡',
+    cinematic: '电影',
+  },
   game: {
     interactPrompt: '与 {name} 交谈',
     dialogueContinue: '点击继续',

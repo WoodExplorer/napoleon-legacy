@@ -12,6 +12,12 @@ import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
 import { AudioDirector } from './AudioDirector.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
+import {
+  getGraphicsPreset,
+  getNextGraphicsQuality,
+  loadGraphicsQuality,
+  saveGraphicsQuality,
+} from './GraphicsSettings.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
@@ -60,6 +66,9 @@ export class GameEngine {
     this.missionUI = null;
     this.cinematicUI = null;
     this.audioUI = null;
+    this.graphicsUI = null;
+    this.graphicsQuality = loadGraphicsQuality();
+    this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
     this.cinematicIntro = null;
     this._missionSyncTimer = 0;
     this._movementBlocked = false;
@@ -71,13 +80,9 @@ export class GameEngine {
   _init() {
     // Renderer
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
 
     // Camera
     this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 200);
@@ -93,9 +98,55 @@ export class GameEngine {
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
+    this._applyGraphicsPreset();
 
     window.addEventListener('resize', () => this._onResize());
     this._bindPointerCamera();
+  }
+
+  _getGraphicsPixelRatio() {
+    const deviceRatio = window.devicePixelRatio || 1;
+    return Math.max(1, Math.min(deviceRatio, this.graphicsPreset.pixelRatioCap));
+  }
+
+  _resolveShadowMapType(typeName) {
+    return THREE[typeName] ?? THREE.PCFShadowMap;
+  }
+
+  _applyGraphicsPreset() {
+    if (!this.renderer || !this.graphicsPreset) return;
+    const preset = this.graphicsPreset;
+    const pixelRatio = this._getGraphicsPixelRatio();
+
+    this.renderer.setPixelRatio(pixelRatio);
+    this.composer?.setPixelRatio?.(pixelRatio);
+    this.renderer.shadowMap.enabled = preset.shadows;
+    this.renderer.shadowMap.type = this._resolveShadowMapType(preset.shadowMapType);
+    this.renderer.toneMappingExposure = preset.exposure;
+
+    if (this.bloomPass) {
+      this.bloomPass.enabled = preset.bloom.enabled;
+      this.bloomPass.strength = preset.bloom.strength;
+      this.bloomPass.radius = preset.bloom.radius;
+      this.bloomPass.threshold = preset.bloom.threshold;
+    }
+
+    this._applySceneShadowQuality();
+    this._syncGraphicsControls();
+  }
+
+  _applySceneShadowQuality() {
+    if (!this.scene || !this.graphicsPreset) return;
+    const size = this.graphicsPreset.shadowMapSize;
+    this.scene.traverse(object => {
+      if (!object.isLight || !object.shadow || !object.castShadow) return;
+      object.shadow.mapSize.set(size, size);
+      if (object.shadow.map) {
+        object.shadow.map.dispose();
+        object.shadow.map = null;
+      }
+      object.shadow.needsUpdate = true;
+    });
   }
 
   _bindPointerCamera() {
@@ -127,6 +178,8 @@ export class GameEngine {
   _onResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
+    this.renderer.setPixelRatio(this._getGraphicsPixelRatio());
+    this.composer?.setPixelRatio?.(this._getGraphicsPixelRatio());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.composer?.setSize(window.innerWidth, window.innerHeight);
   }
@@ -153,6 +206,27 @@ export class GameEngine {
       this._syncAudioControls();
     });
     this._syncAudioControls();
+  }
+
+  setupGraphicsControls(uiElements) {
+    this.graphicsUI = uiElements;
+    uiElements.toggle?.addEventListener('click', () => {
+      this.audio.playUi();
+      this.setGraphicsQuality(getNextGraphicsQuality(this.graphicsQuality), { persist: true });
+    });
+    this._syncGraphicsControls();
+  }
+
+  setGraphicsQuality(quality, options = {}) {
+    this.graphicsQuality = options.persist ? saveGraphicsQuality(quality) : getGraphicsPreset(quality).id;
+    this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
+    this._applyGraphicsPreset();
+    return this.graphicsPreset;
+  }
+
+  refreshHudControls() {
+    this._syncAudioControls();
+    this._syncGraphicsControls();
   }
 
   setPlotEngine(pe, gameState) {
@@ -219,6 +293,7 @@ export class GameEngine {
     this.renderPass.camera = this.camera;
     this.currentChapterScene = chapterScene;
     this.player = chapterScene.build(this.scene);
+    this._applyGraphicsPreset();
     this.audio.startChapterAmbience(chapterScene.index)
       .then(() => this._syncAudioControls())
       .catch(() => this._syncAudioControls());
@@ -448,6 +523,17 @@ export class GameEngine {
     this.audioUI.toggle.setAttribute('title', label);
     this.audioUI.toggle.setAttribute('aria-pressed', String(!this.audio.muted));
     this.audioUI.toggle.classList.toggle('muted', this.audio.muted);
+  }
+
+  _syncGraphicsControls() {
+    if (!this.graphicsUI?.toggle || !this.graphicsPreset) return;
+    const preset = this.graphicsPreset;
+    const label = t('graphics.qualityLabel', { quality: t(preset.labelKey) });
+    this.graphicsUI.toggle.setAttribute('aria-label', label);
+    this.graphicsUI.toggle.setAttribute('title', label);
+    this.graphicsUI.toggle.dataset.quality = preset.id;
+    this.graphicsUI.toggle.dataset.shortLabel = preset.shortLabel;
+    this.graphicsUI.toggle.textContent = preset.icon;
   }
 
   _attachObjectiveMarkers() {
