@@ -43,6 +43,8 @@ export const zhCN = {
     kicker: '战役命令',
     progress: '已完成 {complete}/{total}',
     compassLabel: '目标：{name}，{distance}',
+    collapse: '收起战役指引',
+    expand: '展开战役指引',
   },
   cinematic: {
     kicker: '历史剧场',
@@ -69,6 +71,7 @@ export const zhCN = {
     off: '关',
   },
   performance: {
+    badgeLabel: '{fps} FPS · {quality}画质',
     recommendAutoQuality: '当前帧率承压，开启自动画质可稳定渲染。',
     enableAuto: '开启自动',
     dismiss: '关闭性能建议',

@@ -43,6 +43,8 @@ export const en = {
     kicker: 'Campaign Orders',
     progress: '{complete}/{total} secured',
     compassLabel: 'Objective: {name}, {distance}',
+    collapse: 'Collapse campaign orders',
+    expand: 'Expand campaign orders',
   },
   cinematic: {
     kicker: 'Historical Theater',
@@ -69,6 +71,7 @@ export const en = {
     off: 'Off',
   },
   performance: {
+    badgeLabel: '{fps} FPS · {quality} graphics',
     recommendAutoQuality: 'Frame rate is under pressure. Auto Quality can stabilize rendering.',
     enableAuto: 'Enable Auto',
     dismiss: 'Dismiss performance recommendation',

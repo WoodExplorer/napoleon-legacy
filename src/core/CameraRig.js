@@ -9,6 +9,8 @@ export const CAMERA_RIG_DEFAULTS = Object.freeze({
   baseFov: 65,
   movingFovBoost: 2.8,
   blockedFovPenalty: -1.2,
+  minPitch: -0.82,
+  maxPitch: 0.58,
 });
 
 function clamp(value, min, max) {
@@ -96,7 +98,7 @@ export function computeCameraRigTarget(options, config = {}) {
   const rig = normalizeConfig(config);
   const player = options.playerPosition;
   const distance = clampCameraDistance(options.distance, rig);
-  const pitch = clamp(options.pitch ?? 0, -0.82, 0.24);
+  const pitch = clamp(options.pitch ?? 0, rig.minPitch, rig.maxPitch);
   const yaw = (options.playerRotationY ?? 0) + (options.yawOffset ?? 0);
   const lookAt = {
     x: player.x,
