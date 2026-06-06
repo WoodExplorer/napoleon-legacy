@@ -20,7 +20,8 @@
 - add low-FPS quality recommendation
 - add auto quality adjustment feedback
 - add camera sensitivity settings
-- latest: add enhanced subtitles setting
+- add enhanced subtitles setting
+- latest: add third-person camera rig
 
 ## What Changed
 
@@ -64,6 +65,8 @@
 - Added a settings-panel camera sensitivity slider that affects mouse drag, keyboard camera turn, and mobile look speed.
 - Added `src/core/AccessibilitySettings.js` for tested enhanced-subtitle persistence and a settings-panel toggle.
 - Added enhanced subtitle styling for dialogue text: larger copy, stronger backdrop, higher-contrast continuation hint, and immediate body-class application.
+- Added `src/core/CameraRig.js` for tested third-person camera math, zoom clamping, scene-obstacle distance resolution, smoothing, and motion FOV feedback.
+- Updated `GameEngine` to drive the Three.js camera from the CameraRig, including smooth chase-camera follow and camera avoidance against chapter collision objects and NPC blockers.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -77,9 +80,9 @@ npm run build
 
 Test result:
 
-- 49 passed / 0 failed
+- 54 passed / 0 failed
 
-Browser checks performed at `http://127.0.0.1:5175/`:
+Browser checks performed at `http://127.0.0.1:5173/`:
 
 - Default language renders in English.
 - Chinese language toggle updates UI text and document metadata.
@@ -100,6 +103,8 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Auto-quality adjustment toast shell is present, localized through the shared translation system, hidden by default, and does not disturb the first chapter HUD layout when inactive.
 - Camera sensitivity slider renders in the settings panel, defaults to 100%, updates to 140% when dragged, persists before chapter load, and the first chapter still renders without console errors.
 - Enhanced subtitles toggle renders in settings, switches from Off to On, applies the `enhanced-subtitles` body class immediately, and increases dialogue text sizing without console errors.
+- Third-person camera rig tests cover zoom clamping, default chase-camera pose, obstacle distance shortening, motion/blocked FOV feedback, and non-snapping smoothing.
+- First chapter renders at 1280x720 in the in-app browser after the camera rig change; drag-look and wheel zoom keep the HUD active with no console error/warn entries.
 
 ## Known Notes
 
