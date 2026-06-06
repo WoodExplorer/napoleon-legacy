@@ -76,6 +76,7 @@ export const zhCN = {
   },
   game: {
     interactPrompt: '与 {name} 交谈',
+    approachPrompt: '靠近 {name} · {distance}',
     dialogueContinue: '点击继续',
     pause: '暂停',
     resume: '继续游戏',

@@ -24,6 +24,7 @@ import {
   saveAutoGraphicsEnabled,
   saveGraphicsQuality,
 } from './GraphicsSettings.js';
+import { buildInteractionPromptState } from './InteractionDirector.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { FrameRateSampler } from './PerformanceMonitor.js';
 import { buildObjectiveCompassState } from '../ui/ObjectiveCompass.js';
@@ -33,6 +34,8 @@ const MOVE_SPEED = 4.5;
 const TURN_SPEED = 2.0;
 const CAM_SPEED = 1.8;
 const INTERACT_DIST = 2.5;
+const INTERACT_AWARENESS_DIST = 6.5;
+const INTERACT_READY_ASSIST_DIST = 0.4;
 const CAM_DIST_DEFAULT = 3.8;
 const CAM_PITCH_DEFAULT = -0.18;
 const NPC_COLLISION_RADIUS = 0.62;
@@ -310,6 +313,7 @@ export class GameEngine {
 
     pe.onShowDialog = (node) => {
       this.inDialogue = true;
+      this._hideInteractionPrompt({ consumeInteract: true });
       this.dialogue.showNode(node, (action, data) => {
         if (action === 'choice') {
            const choice = node.choices[data];
@@ -377,6 +381,7 @@ export class GameEngine {
   playChapterIntro(chapter, options = {}) {
     if (!this.player) return;
     this.cinematicIntro = createIntroState(options);
+    this._hideInteractionPrompt({ consumeInteract: true });
     this._renderCinematicIntro(chapter, 0);
     this._applyCinematicPose(getIntroCameraPose(this.cinematicIntro));
   }
@@ -417,10 +422,13 @@ export class GameEngine {
       this._syncPerformanceHud(performanceSnapshot);
     }
 
-    if (!this.isPaused && !this.inDialogue && !this.cinematicIntro) {
+    const canControlPlayer = !this.isPaused && !this.inDialogue && !this.cinematicIntro;
+    if (canControlPlayer) {
       this._handleMovement(delta);
       this._handleCamera(delta);
       this._checkInteraction();
+    } else {
+      this._hideInteractionPrompt({ consumeInteract: true });
     }
 
     if (!this.cinematicIntro) {
@@ -610,29 +618,40 @@ export class GameEngine {
   _checkInteraction() {
     if (!this.player || !this.currentChapterScene) return;
     const npcs = this.currentChapterScene.npcs || [];
-    let nearest = null, nearestDist = Infinity;
-
-    npcs.forEach(npc => {
-      const dx = npc.mesh.position.x - this.player.position.x;
-      const dz = npc.mesh.position.z - this.player.position.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
-      if (dist < (npc.interactDist || INTERACT_DIST) && dist < nearestDist) {
-        nearest = npc; nearestDist = dist;
-      }
+    const promptState = buildInteractionPromptState(this.player, npcs, t, {
+      awarenessDist: INTERACT_AWARENESS_DIST,
+      interactDist: INTERACT_DIST,
+      readyAssistDist: INTERACT_READY_ASSIST_DIST,
     });
 
     const promptEl = document.getElementById('interact-prompt');
+    const iconEl = promptEl?.querySelector('.interact-icon');
     const textEl = document.getElementById('interact-text');
-    if (nearest) {
+    if (promptState.visible) {
       promptEl?.classList.remove('hidden');
+      promptEl?.classList.toggle('ready', promptState.canInteract);
+      promptEl?.style.setProperty('--interact-progress', `${Math.round(promptState.progress * 100)}%`);
+      if (iconEl) iconEl.textContent = promptState.canInteract ? 'E' : '→';
       if (textEl) {
-        const name = nearest.nameKey ? t(nearest.nameKey) : nearest.name;
-        textEl.textContent = t('game.interactPrompt', { name });
+        textEl.textContent = promptState.canInteract
+          ? t('game.interactPrompt', { name: promptState.name })
+          : t('game.approachPrompt', {
+              name: promptState.name,
+              distance: promptState.distanceLabel,
+            });
       }
-      if (this.input.consumeInteract()) this._startDialogue(nearest);
+      if (this.input.consumeInteract() && promptState.canInteract) this._startDialogue(promptState.npc);
     } else {
-      promptEl?.classList.add('hidden');
+      this._hideInteractionPrompt({ consumeInteract: true });
     }
+  }
+
+  _hideInteractionPrompt(options = {}) {
+    const promptEl = document.getElementById('interact-prompt');
+    promptEl?.classList.add('hidden');
+    promptEl?.classList.remove('ready');
+    promptEl?.style.setProperty('--interact-progress', '0%');
+    if (options.consumeInteract) this.input.consumeInteract();
   }
 
   _syncAudioControls() {
@@ -873,6 +892,7 @@ export class GameEngine {
     if (!this.dialogue || !this.currentChapterScene) return;
 
     this.audio.playUi();
+    this._hideInteractionPrompt({ consumeInteract: true });
     this.dialogueFocus = npc;
     if (npc.animator) npc.animator.setState('talk');
     if (this.currentChapterScene.playerAnimator) {

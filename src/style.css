@@ -438,19 +438,34 @@ html, body {
 
 /* ===== Interact Prompt ===== */
 #interact-prompt {
+  --interact-progress: 0%;
   position: absolute; bottom: 35%; left: 50%; transform: translateX(-50%);
   display: flex; align-items: center; gap: 0.75rem;
   background: var(--glass-bg); border: 1px solid var(--glass-border);
   padding: 0.6rem 1.2rem; border-radius: 30px;
   animation: pulse 1.5s ease-in-out infinite;
   backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+#interact-prompt::before {
+  content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: var(--interact-progress);
+  background: linear-gradient(90deg, rgba(238,157,83,0.55), var(--gold-light));
+  transition: width 0.18s ease;
+}
+#interact-prompt.ready {
+  border-color: rgba(232,201,122,0.72);
+  box-shadow: 0 0 24px rgba(232,201,122,0.18), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 .interact-icon {
   width: 28px; height: 28px; background: var(--gold); color: var(--navy);
   border-radius: 5px; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-ui); font-weight: 700; font-size: 0.85rem;
+  position: relative; z-index: 1;
 }
-#interact-text { font-family: var(--font-ui); font-size: 0.9rem; color: var(--text-primary); }
+#interact-text {
+  font-family: var(--font-ui); font-size: 0.9rem; color: var(--text-primary);
+  position: relative; z-index: 1;
+}
 
 /* ===== Dialogue Box ===== */
 #dialogue-box {

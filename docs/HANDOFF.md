@@ -23,7 +23,8 @@
 - add enhanced subtitles setting
 - add third-person camera rig
 - add objective compass navigation
-- latest: add dialogue camera framing
+- add dialogue camera framing
+- latest: add interaction target lock prompts
 
 ## What Changed
 
@@ -73,6 +74,8 @@
 - Added a HUD objective compass showing the nearest incomplete target's relative direction, name, and distance, synchronized from mission state and the active camera pose.
 - Added `src/core/DialogueCamera.js` for tested NPC-facing yaw and over-shoulder dialogue camera targets.
 - Updated `GameEngine` to lock dialogue focus, rotate player/NPC actors toward one another, hide the objective compass while dialogue is active, and drive the camera through the dialogue framing target.
+- Added `src/core/InteractionDirector.js` for tested NPC awareness distance, nearest-target selection, approach prompt state, ready prompt state, small ready-assist radius, disabled state, and distance formatting.
+- Updated the interaction HUD to show approach guidance with target distance/progress before the player is in range, then switch to the localized `E` interaction state at close range without leaking prompts during cinematics or dialogue.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -86,7 +89,7 @@ npm run build
 
 Test result:
 
-- 63 passed / 0 failed
+- 68 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5173/`:
 
@@ -116,6 +119,9 @@ Browser checks performed at `http://127.0.0.1:5173/`:
 - Mobile viewport `390x844` renders the objective compass and mission panel with an 8px vertical gap, no overlap with the system buttons, visible canvas, and no console error/warn entries.
 - Dialogue camera tests cover player/NPC facing yaw, over-shoulder camera target placement, FOV, and overlapping-actor fallback behavior.
 - First chapter dialogue with Letizia triggers the dialogue camera path: dialogue UI is visible, the target compass hides during conversation, the canvas/HUD remain active, and browser console stayed free of application error/warn entries.
+- Interaction director tests cover distance measurement, distance labels, nearest NPC selection inside awareness range, approach prompt state, ready interaction state, ready-assist tolerance, and disabled prompt state.
+- First chapter browser verification covered intro-hidden prompt state, post-intro approach prompt, close-range `E` ready prompt, dialogue launch from `E`, prompt hiding during dialogue, compass hiding during dialogue, and no console error/warn entries.
+- All seven chapters were smoke-loaded in the in-app browser; each showed a visible 3D canvas, visible game HUD, two mission objectives, cinematic intro overlay, and no console error/warn entries.
 
 ## Known Notes
 
