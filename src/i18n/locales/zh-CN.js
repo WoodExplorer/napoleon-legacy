@@ -62,6 +62,7 @@ export const zhCN = {
     close: '关闭设置',
     graphicsQuality: '画质',
     autoQuality: '自动画质',
+    cameraSensitivity: '镜头灵敏度',
     on: '开',
     off: '关',
   },

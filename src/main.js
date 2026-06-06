@@ -10,6 +10,11 @@ import { applyTranslations } from './i18n/dom.js';
 import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
 import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
 import {
+  formatCameraSensitivity,
+  loadCameraSensitivity,
+  saveCameraSensitivity,
+} from './core/CameraSettings.js';
+import {
   getGraphicsPreset,
   getGraphicsPresetOptions,
   loadAutoGraphicsEnabled,
@@ -76,12 +81,19 @@ function getAutoGraphicsEnabled() {
   return engine?.getAutoGraphicsEnabled?.() ?? loadAutoGraphicsEnabled();
 }
 
+function getCameraSensitivity() {
+  return engine?.getCameraSensitivity?.() ?? loadCameraSensitivity();
+}
+
 function renderSettingsPanel() {
   const list = $('settings-graphics-options');
   const autoToggle = $('settings-auto-quality');
-  if (!list || !autoToggle) return;
+  const sensitivityInput = $('settings-camera-sensitivity');
+  const sensitivityValue = $('settings-camera-sensitivity-value');
+  if (!list || !autoToggle || !sensitivityInput || !sensitivityValue) return;
   const activeQuality = getActiveGraphicsQuality();
   const autoEnabled = getAutoGraphicsEnabled();
+  const sensitivity = getCameraSensitivity();
   list.innerHTML = getGraphicsPresetOptions().map(preset => `
     <button
       type="button"
@@ -103,6 +115,8 @@ function renderSettingsPanel() {
   autoToggle.classList.toggle('active', autoEnabled);
   autoToggle.setAttribute('aria-pressed', String(autoEnabled));
   autoToggle.querySelector('.settings-switch-state').textContent = t(autoEnabled ? 'settings.on' : 'settings.off');
+  sensitivityInput.value = String(sensitivity);
+  sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
 }
 
 function setGraphicsQualityFromSettings(quality) {
@@ -119,6 +133,15 @@ function setAutoGraphicsFromSettings(enabled) {
     : saveAutoGraphicsEnabled(enabled);
   renderSettingsPanel();
   return value;
+}
+
+function setCameraSensitivityFromSettings(value) {
+  const sensitivity = engine
+    ? engine.setCameraSensitivity(value, { persist: true })
+    : saveCameraSensitivity(value);
+  const sensitivityValue = $('settings-camera-sensitivity-value');
+  if (sensitivityValue) sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
+  return sensitivity;
 }
 
 function openSettingsPanel(returnTarget = 'main') {
@@ -456,6 +479,10 @@ $('btn-close-settings')?.addEventListener('click', () => {
 
 $('settings-auto-quality')?.addEventListener('click', () => {
   setAutoGraphicsFromSettings(!getAutoGraphicsEnabled());
+});
+
+$('settings-camera-sensitivity')?.addEventListener('input', event => {
+  setCameraSensitivityFromSettings(event.target.value);
 });
 
 settingsPanel?.addEventListener('click', event => {
