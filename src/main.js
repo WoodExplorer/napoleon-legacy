@@ -12,7 +12,9 @@ import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
 import {
   getGraphicsPreset,
   getGraphicsPresetOptions,
+  loadAutoGraphicsEnabled,
   loadGraphicsQuality,
+  saveAutoGraphicsEnabled,
   saveGraphicsQuality,
 } from './core/GraphicsSettings.js';
 
@@ -70,10 +72,16 @@ function getActiveGraphicsQuality() {
   return engine?.getGraphicsQuality?.() ?? loadGraphicsQuality();
 }
 
+function getAutoGraphicsEnabled() {
+  return engine?.getAutoGraphicsEnabled?.() ?? loadAutoGraphicsEnabled();
+}
+
 function renderSettingsPanel() {
   const list = $('settings-graphics-options');
-  if (!list) return;
+  const autoToggle = $('settings-auto-quality');
+  if (!list || !autoToggle) return;
   const activeQuality = getActiveGraphicsQuality();
+  const autoEnabled = getAutoGraphicsEnabled();
   list.innerHTML = getGraphicsPresetOptions().map(preset => `
     <button
       type="button"
@@ -91,6 +99,10 @@ function renderSettingsPanel() {
       setGraphicsQualityFromSettings(button.dataset.graphicsQuality);
     });
   });
+
+  autoToggle.classList.toggle('active', autoEnabled);
+  autoToggle.setAttribute('aria-pressed', String(autoEnabled));
+  autoToggle.querySelector('.settings-switch-state').textContent = t(autoEnabled ? 'settings.on' : 'settings.off');
 }
 
 function setGraphicsQualityFromSettings(quality) {
@@ -99,6 +111,14 @@ function setGraphicsQualityFromSettings(quality) {
     : getGraphicsPreset(saveGraphicsQuality(quality));
   renderSettingsPanel();
   return preset;
+}
+
+function setAutoGraphicsFromSettings(enabled) {
+  const value = engine
+    ? engine.setAutoGraphicsEnabled(enabled, { persist: true })
+    : saveAutoGraphicsEnabled(enabled);
+  renderSettingsPanel();
+  return value;
 }
 
 function openSettingsPanel(returnTarget = 'main') {
@@ -226,6 +246,7 @@ async function ensureEngine() {
         badge: $('performance-badge'),
         fps: $('performance-fps'),
         quality: $('performance-quality'),
+        auto: $('performance-auto'),
       });
       setupMobileControls();
       setupPauseMenu();
@@ -425,6 +446,10 @@ $('btn-settings-main')?.addEventListener('click', () => {
 
 $('btn-close-settings')?.addEventListener('click', () => {
   closeSettingsPanel();
+});
+
+$('settings-auto-quality')?.addEventListener('click', () => {
+  setAutoGraphicsFromSettings(!getAutoGraphicsEnabled());
 });
 
 settingsPanel?.addEventListener('click', event => {

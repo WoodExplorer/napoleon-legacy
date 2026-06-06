@@ -5,6 +5,7 @@ import {
   getFootstepInterval,
   MASTER_VOLUME,
 } from '../core/AudioDirector.js';
+import { AutoQualityController } from '../core/AutoQuality.js';
 import {
   createIntroState,
   easeInOutCubic,
@@ -13,13 +14,17 @@ import {
   INTRO_CAMERA_DEFAULTS,
 } from '../core/CinematicDirector.js';
 import {
+  AUTO_GRAPHICS_STORAGE_KEY,
   DEFAULT_GRAPHICS_QUALITY,
+  getLowerGraphicsQuality,
   GRAPHICS_STORAGE_KEY,
   getGraphicsPreset,
   getGraphicsPresetOptions,
   getNextGraphicsQuality,
+  loadAutoGraphicsEnabled,
   loadGraphicsQuality,
   normalizeGraphicsQuality,
+  saveAutoGraphicsEnabled,
   saveGraphicsQuality,
 } from '../core/GraphicsSettings.js';
 import {
@@ -502,6 +507,9 @@ test('cycles graphics quality through low, balanced, and cinematic', () => {
   assertEqual(getNextGraphicsQuality('low'), 'balanced');
   assertEqual(getNextGraphicsQuality('balanced'), 'cinematic');
   assertEqual(getNextGraphicsQuality('cinematic'), 'low');
+  assertEqual(getLowerGraphicsQuality('cinematic'), 'balanced');
+  assertEqual(getLowerGraphicsQuality('balanced'), 'low');
+  assertEqual(getLowerGraphicsQuality('low'), 'low');
 });
 
 test('exposes graphics options in UI order with renderable labels', () => {
@@ -517,13 +525,21 @@ test('exposes graphics options in UI order with renderable labels', () => {
 
 test('persists graphics quality while tolerating broken storage', () => {
   const storage = {
-    value: null,
-    getItem(key) { return key === GRAPHICS_STORAGE_KEY ? this.value : null; },
-    setItem(key, value) { if (key === GRAPHICS_STORAGE_KEY) this.value = value; },
+    values: {},
+    getItem(key) { return this.values[key] ?? null; },
+    setItem(key, value) { this.values[key] = value; },
   };
   assertEqual(saveGraphicsQuality('cinematic', storage), 'cinematic');
   assertEqual(loadGraphicsQuality(storage), 'cinematic');
   assertEqual(saveGraphicsQuality('unknown', storage), DEFAULT_GRAPHICS_QUALITY);
+  assertEqual(storage.values[GRAPHICS_STORAGE_KEY], DEFAULT_GRAPHICS_QUALITY);
+
+  assertEqual(loadAutoGraphicsEnabled(storage), false);
+  assertEqual(saveAutoGraphicsEnabled(true, storage), true);
+  assertEqual(storage.values[AUTO_GRAPHICS_STORAGE_KEY], 'true');
+  assertEqual(loadAutoGraphicsEnabled(storage), true);
+  assertEqual(saveAutoGraphicsEnabled(false, storage), false);
+  assertEqual(loadAutoGraphicsEnabled(storage), false);
 
   const brokenStorage = {
     getItem() { throw new Error('blocked'); },
@@ -531,6 +547,36 @@ test('persists graphics quality while tolerating broken storage', () => {
   };
   assertEqual(loadGraphicsQuality(brokenStorage), DEFAULT_GRAPHICS_QUALITY);
   assertEqual(saveGraphicsQuality('low', brokenStorage), 'low');
+  assertEqual(loadAutoGraphicsEnabled(brokenStorage), false);
+  assertEqual(saveAutoGraphicsEnabled(true, brokenStorage), true);
+});
+
+console.log('\nAutoQuality');
+test('auto quality downgrades only after sustained pressure', () => {
+  const controller = new AutoQualityController({ downgradeReports: 3, cooldownReports: 2 });
+  const pressure = { status: 'strained', fps: 34 };
+  assertEqual(controller.record(pressure, 'cinematic'), null);
+  assertEqual(controller.record(pressure, 'cinematic'), null);
+  const action = controller.record(pressure, 'cinematic');
+  assertEqual(action.from, 'cinematic');
+  assertEqual(action.to, 'balanced');
+  assertEqual(action.reason, 'strained');
+});
+
+test('auto quality respects cooldown and never drops below low', () => {
+  const controller = new AutoQualityController({ downgradeReports: 1, cooldownReports: 2 });
+  const pressure = { status: 'critical', fps: 24 };
+  assertEqual(controller.record(pressure, 'balanced').to, 'low');
+  assertEqual(controller.record(pressure, 'low'), null);
+  assertEqual(controller.record(pressure, 'low'), null);
+  assertEqual(controller.record(pressure, 'low'), null);
+});
+
+test('auto quality relaxes pressure on healthy frame reports', () => {
+  const controller = new AutoQualityController({ downgradeReports: 2, cooldownReports: 0 });
+  assertEqual(controller.record({ status: 'strained', fps: 34 }, 'cinematic'), null);
+  assertEqual(controller.record({ status: 'stable', fps: 60 }, 'cinematic'), null);
+  assertEqual(controller.record({ status: 'strained', fps: 34 }, 'cinematic'), null);
 });
 
 console.log('\nPerformanceMonitor');

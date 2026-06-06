@@ -11,11 +11,14 @@ import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
 import { AudioDirector } from './AudioDirector.js';
+import { AutoQualityController } from './AutoQuality.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import {
   getGraphicsPreset,
   getNextGraphicsQuality,
+  loadAutoGraphicsEnabled,
   loadGraphicsQuality,
+  saveAutoGraphicsEnabled,
   saveGraphicsQuality,
 } from './GraphicsSettings.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
@@ -70,6 +73,8 @@ export class GameEngine {
     this.graphicsUI = null;
     this.performanceUI = null;
     this.performance = new FrameRateSampler();
+    this.autoQuality = new AutoQualityController();
+    this.autoGraphicsEnabled = loadAutoGraphicsEnabled();
     this.graphicsQuality = loadGraphicsQuality();
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
     this.cinematicIntro = null;
@@ -229,12 +234,24 @@ export class GameEngine {
   setGraphicsQuality(quality, options = {}) {
     this.graphicsQuality = options.persist ? saveGraphicsQuality(quality) : getGraphicsPreset(quality).id;
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
+    if (options.source !== 'auto') this.autoQuality.reset();
     this._applyGraphicsPreset();
     return this.graphicsPreset;
   }
 
   getGraphicsQuality() {
     return this.graphicsQuality;
+  }
+
+  setAutoGraphicsEnabled(enabled, options = {}) {
+    this.autoGraphicsEnabled = options.persist ? saveAutoGraphicsEnabled(enabled) : Boolean(enabled);
+    this.autoQuality.reset();
+    this._syncPerformanceHud(this.performance.getSnapshot());
+    return this.autoGraphicsEnabled;
+  }
+
+  getAutoGraphicsEnabled() {
+    return this.autoGraphicsEnabled;
   }
 
   refreshHudControls() {
@@ -358,7 +375,10 @@ export class GameEngine {
     }
 
     const performanceSnapshot = this.performance.record(delta);
-    if (performanceSnapshot) this._syncPerformanceHud(performanceSnapshot);
+    if (performanceSnapshot) {
+      this._applyAutoGraphics(performanceSnapshot);
+      this._syncPerformanceHud(performanceSnapshot);
+    }
 
     if (!this.isPaused && !this.inDialogue && !this.cinematicIntro) {
       this._handleMovement(delta);
@@ -558,9 +578,18 @@ export class GameEngine {
     const preset = this.graphicsPreset;
     const fpsLabel = snapshot.fpsLabel ?? '--';
     this.performanceUI.badge.dataset.status = snapshot.status;
+    this.performanceUI.badge.dataset.auto = String(this.autoGraphicsEnabled);
     this.performanceUI.badge.setAttribute('title', `${fpsLabel} FPS · ${t(preset.labelKey)}`);
     if (this.performanceUI.fps) this.performanceUI.fps.textContent = fpsLabel;
     if (this.performanceUI.quality) this.performanceUI.quality.textContent = preset.shortLabel;
+    if (this.performanceUI.auto) this.performanceUI.auto.textContent = this.autoGraphicsEnabled ? 'A' : '';
+  }
+
+  _applyAutoGraphics(snapshot) {
+    if (!this.autoGraphicsEnabled || this.isPaused || !this.currentChapterScene) return;
+    const action = this.autoQuality.record(snapshot, this.graphicsQuality);
+    if (!action) return;
+    this.setGraphicsQuality(action.to, { persist: true, source: 'auto' });
   }
 
   _attachObjectiveMarkers() {
