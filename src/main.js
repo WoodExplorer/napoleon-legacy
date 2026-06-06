@@ -9,6 +9,12 @@ import { renderSummary } from './ui/SummaryUI.js';
 import { applyTranslations } from './i18n/dom.js';
 import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
 import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
+import {
+  getGraphicsPreset,
+  getGraphicsPresetOptions,
+  loadGraphicsQuality,
+  saveGraphicsQuality,
+} from './core/GraphicsSettings.js';
 
 // ---- DOM Elements ----
 const $ = id => document.getElementById(id);
@@ -20,11 +26,13 @@ const gameUI = $('game-ui');
 const finalSummary = $('final-summary');
 const aboutScreen = $('about-screen');
 const pauseMenu = $('pause-menu');
+const settingsPanel = $('settings-panel');
 const chapterComplete = $('chapter-complete');
 const mobileControls = $('mobile-controls');
 
 let engine = null;
 let engineReadyPromise = null;
+let settingsReturnTarget = 'main';
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({
@@ -49,11 +57,61 @@ function refreshVisibleText() {
   syncLocaleButtons();
   if (!chapterSelect.classList.contains('hidden')) renderChapterSelect();
   if (!finalSummary.classList.contains('hidden')) renderSummary();
+  if (!settingsPanel.classList.contains('hidden')) renderSettingsPanel();
   if (!gameUI.classList.contains('hidden')) {
     const ch = getChapter(gameState.currentChapter);
     $('hud-chapter-num').textContent = ch.number;
     $('hud-chapter-name').textContent = ch.title;
     engine?.refreshHudControls();
+  }
+}
+
+function getActiveGraphicsQuality() {
+  return engine?.getGraphicsQuality?.() ?? loadGraphicsQuality();
+}
+
+function renderSettingsPanel() {
+  const list = $('settings-graphics-options');
+  if (!list) return;
+  const activeQuality = getActiveGraphicsQuality();
+  list.innerHTML = getGraphicsPresetOptions().map(preset => `
+    <button
+      type="button"
+      class="settings-option ${preset.id === activeQuality ? 'active' : ''}"
+      data-graphics-quality="${escapeHtml(preset.id)}"
+      aria-pressed="${preset.id === activeQuality}"
+    >
+      <span aria-hidden="true">${escapeHtml(preset.icon)}</span>
+      <span>${escapeHtml(t(preset.labelKey))}</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('[data-graphics-quality]').forEach(button => {
+    button.addEventListener('click', () => {
+      setGraphicsQualityFromSettings(button.dataset.graphicsQuality);
+    });
+  });
+}
+
+function setGraphicsQualityFromSettings(quality) {
+  const preset = engine
+    ? engine.setGraphicsQuality(quality, { persist: true })
+    : getGraphicsPreset(saveGraphicsQuality(quality));
+  renderSettingsPanel();
+  return preset;
+}
+
+function openSettingsPanel(returnTarget = 'main') {
+  settingsReturnTarget = returnTarget;
+  renderSettingsPanel();
+  settingsPanel.classList.remove('hidden');
+  if (returnTarget === 'pause') pauseMenu.classList.add('hidden');
+}
+
+function closeSettingsPanel() {
+  settingsPanel.classList.add('hidden');
+  if (settingsReturnTarget === 'pause' && engine?.isPaused && !gameUI.classList.contains('hidden')) {
+    pauseMenu.classList.remove('hidden');
   }
 }
 
@@ -289,6 +347,10 @@ function showFinalSummary() {
 // ---- Pause Menu ----
 function setupPauseMenu() {
   window.addEventListener('keydown', e => {
+    if (e.code === 'Escape' && !settingsPanel.classList.contains('hidden')) {
+      closeSettingsPanel();
+      return;
+    }
     if (e.code === 'Escape' && engine) {
       if (engine.isPaused) { engine.resume(); pauseMenu.classList.add('hidden'); }
       else { engine.pause(); pauseMenu.classList.remove('hidden'); }
@@ -296,6 +358,9 @@ function setupPauseMenu() {
   });
   $('btn-resume')?.addEventListener('click', () => {
     engine.resume(); pauseMenu.classList.add('hidden');
+  });
+  $('btn-settings-pause')?.addEventListener('click', () => {
+    openSettingsPanel('pause');
   });
   $('btn-chapter-menu')?.addEventListener('click', () => {
     engine.stop(); pauseMenu.classList.add('hidden');
@@ -347,6 +412,18 @@ $('btn-continue')?.addEventListener('click', () => {
 $('btn-about')?.addEventListener('click', () => {
   mainMenu.classList.add('hidden');
   aboutScreen.classList.remove('hidden');
+});
+
+$('btn-settings-main')?.addEventListener('click', () => {
+  openSettingsPanel('main');
+});
+
+$('btn-close-settings')?.addEventListener('click', () => {
+  closeSettingsPanel();
+});
+
+settingsPanel?.addEventListener('click', event => {
+  if (event.target.classList.contains('settings-backdrop')) closeSettingsPanel();
 });
 
 $('btn-back-from-about')?.addEventListener('click', () => {

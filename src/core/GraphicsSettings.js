@@ -34,7 +34,7 @@ export const GRAPHICS_PRESETS = Object.freeze({
     icon: '◆',
     pixelRatioCap: 2,
     shadows: true,
-    shadowMapType: 'PCFSoftShadowMap',
+    shadowMapType: 'PCFShadowMap',
     shadowMapSize: 2048,
     exposure: 1.24,
     bloom: Object.freeze({ enabled: true, strength: 0.34, radius: 0.58, threshold: 0.76 }),
@@ -47,6 +47,10 @@ export function normalizeGraphicsQuality(quality) {
 
 export function getGraphicsPreset(quality) {
   return GRAPHICS_PRESETS[normalizeGraphicsQuality(quality)];
+}
+
+export function getGraphicsPresetOptions() {
+  return GRAPHICS_QUALITY_ORDER.map(quality => GRAPHICS_PRESETS[quality]);
 }
 
 export function getNextGraphicsQuality(quality) {

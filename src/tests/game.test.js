@@ -16,6 +16,7 @@ import {
   DEFAULT_GRAPHICS_QUALITY,
   GRAPHICS_STORAGE_KEY,
   getGraphicsPreset,
+  getGraphicsPresetOptions,
   getNextGraphicsQuality,
   loadGraphicsQuality,
   normalizeGraphicsQuality,
@@ -496,6 +497,17 @@ test('cycles graphics quality through low, balanced, and cinematic', () => {
   assertEqual(getNextGraphicsQuality('low'), 'balanced');
   assertEqual(getNextGraphicsQuality('balanced'), 'cinematic');
   assertEqual(getNextGraphicsQuality('cinematic'), 'low');
+});
+
+test('exposes graphics options in UI order with renderable labels', () => {
+  const options = getGraphicsPresetOptions();
+  assertEqual(options.map(option => option.id).join(','), 'low,balanced,cinematic');
+  options.forEach(option => {
+    assert(hasTranslationKey(option.labelKey, 'en'), `Missing English label: ${option.labelKey}`);
+    assert(hasTranslationKey(option.labelKey, 'zh-CN'), `Missing Chinese label: ${option.labelKey}`);
+    assert(option.icon.length > 0);
+    assert(option.pixelRatioCap >= 1);
+  });
 });
 
 test('persists graphics quality while tolerating broken storage', () => {

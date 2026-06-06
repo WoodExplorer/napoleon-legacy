@@ -28,6 +28,7 @@ export const en = {
   menu: {
     newGame: 'New Game',
     continue: 'Continue',
+    settings: 'Settings',
     about: 'About',
     back: 'Back',
     chapterSelect: 'Select Chapter',
@@ -55,6 +56,11 @@ export const en = {
     low: 'Low',
     balanced: 'Balanced',
     cinematic: 'Cinematic',
+  },
+  settings: {
+    title: 'Settings',
+    close: 'Close settings',
+    graphicsQuality: 'Graphics Quality',
   },
   game: {
     interactPrompt: 'Talk to {name}',
