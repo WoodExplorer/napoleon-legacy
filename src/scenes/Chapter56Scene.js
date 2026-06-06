@@ -31,13 +31,13 @@ export class Chapter5Scene {
     murat.position.set(3.5, 0, -1.5);
     murat.rotation.y = -Math.PI / 3;
     scene.add(murat);
-    this.npcs.push({ mesh: murat, nameKey: 'characters.murat', animator: new CharacterAnimator(murat), dialogueId: 'murat', interactDist: 2.5 });
+    this.npcs.push({ mesh: murat, nameKey: 'characters.murat', animator: new CharacterAnimator(murat), dialogueId: 'murat', objectiveFlag: 'ch5_talked_murat', interactDist: 2.5 });
 
     const caulaincourt = buildNPCCharacter({ clothColor: 0x3a3a5a, pantColor: 0x2a2a3a, name: 'caulaincourt' });
     caulaincourt.position.set(-3, 0, 2);
     caulaincourt.rotation.y = Math.PI / 3;
     scene.add(caulaincourt);
-    this.npcs.push({ mesh: caulaincourt, nameKey: 'characters.caulaincourt', animator: new CharacterAnimator(caulaincourt), dialogueId: 'caulaincourt', interactDist: 2.5 });
+    this.npcs.push({ mesh: caulaincourt, nameKey: 'characters.caulaincourt', animator: new CharacterAnimator(caulaincourt), dialogueId: 'caulaincourt', objectiveFlag: 'ch5_talked_caulaincourt', interactDist: 2.5 });
     return this.player;
   }
 
@@ -108,13 +108,13 @@ export class Chapter6Scene {
     ney.position.set(3, 0, -2);
     ney.rotation.y = -Math.PI / 4;
     scene.add(ney);
-    this.npcs.push({ mesh: ney, nameKey: 'characters.ney', animator: new CharacterAnimator(ney), dialogueId: 'ney', interactDist: 2.5 });
+    this.npcs.push({ mesh: ney, nameKey: 'characters.ney', animator: new CharacterAnimator(ney), dialogueId: 'ney', objectiveFlag: 'ch6_talked_ney', interactDist: 2.5 });
 
     const grouchy = buildNPCCharacter({ clothColor: 0x1a3a5c, pantColor: 0xe0d8c0, name: 'grouchy' });
     grouchy.position.set(-3.5, 0, 1.5);
     grouchy.rotation.y = Math.PI / 4;
     scene.add(grouchy);
-    this.npcs.push({ mesh: grouchy, nameKey: 'characters.grouchy', animator: new CharacterAnimator(grouchy), dialogueId: 'grouchy', interactDist: 2.5 });
+    this.npcs.push({ mesh: grouchy, nameKey: 'characters.grouchy', animator: new CharacterAnimator(grouchy), dialogueId: 'grouchy', objectiveFlag: 'ch6_talked_grouchy', interactDist: 2.5 });
     return this.player;
   }
 

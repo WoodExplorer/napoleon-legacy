@@ -9,6 +9,7 @@ import {
   t,
   translateNode,
 } from '../i18n/index.js';
+import { buildMissionState, formatDistance, getObjectiveFlag } from '../ui/MissionTracker.js';
 
 let passed = 0;
 let failed = 0;
@@ -293,6 +294,38 @@ test('translateNode localizes choices', () => {
   const node = translateNode(plotData.ch1_mother_q1);
   assertEqual(node.choices.length, 3);
   assert(node.choices[0].text.includes('Prove myself'));
+});
+
+console.log('\nMissionTracker');
+test('derives objective flags from chapter and dialogue id', () => {
+  assertEqual(getObjectiveFlag(0, { dialogueId: 'mother' }), 'ch1_talked_mother');
+  assertEqual(getObjectiveFlag(1, { dialogueId: 'general' }), 'ch2_talked_gen');
+  assertEqual(getObjectiveFlag(4, { dialogueId: 'murat', objectiveFlag: 'custom_flag' }), 'custom_flag');
+});
+
+test('formats target distances for HUD display', () => {
+  assertEqual(formatDistance(3.49), '3m');
+  assertEqual(formatDistance(3.5), '4m');
+  assertEqual(formatDistance(null), '--');
+});
+
+test('builds mission progress from NPC flags and player distance', () => {
+  const state = new MockGameState();
+  state.setFlag('ch2_talked_gen', true);
+  const scene = {
+    index: 1,
+    npcs: [
+      { dialogueId: 'general', nameKey: 'characters.carteaux', mesh: { position: { x: 3, z: 4 } } },
+      { dialogueId: 'junot', nameKey: 'characters.junot', mesh: { position: { x: 0, z: 6 } } },
+    ],
+  };
+  const player = { position: { x: 0, z: 0 } };
+  const mission = buildMissionState(scene, state, key => key.split('.').pop(), player);
+  assertEqual(mission.completed, 1);
+  assertEqual(mission.total, 2);
+  assertEqual(mission.objectives[0].done, true);
+  assertEqual(mission.objectives[0].distanceLabel, '5m');
+  assertEqual(mission.objectives[1].done, false);
 });
 
 console.log(`\nResult: ${passed} passed / ${failed} failed`);

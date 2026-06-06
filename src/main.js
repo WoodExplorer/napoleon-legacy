@@ -153,6 +153,12 @@ function startChapter(index) {
       portrait: $('portrait-canvas'),
       skipHint: document.querySelector('.dialogue-skip-hint'),
     });
+    engine.setupMissionTracker({
+      panel: $('mission-panel'),
+      list: $('mission-list'),
+      progressFill: $('mission-progress-fill'),
+      progressText: $('mission-progress-text'),
+    });
     setupMobileControls();
     setupPauseMenu();
   }

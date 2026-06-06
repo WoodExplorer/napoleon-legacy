@@ -44,14 +44,14 @@ export class Chapter1Scene {
     mother.position.set(3, 0, -2);
     mother.rotation.y = -Math.PI / 4;
     scene.add(mother);
-    this.npcs.push({ mesh: mother, nameKey: 'characters.letizia', animator: new CharacterAnimator(mother), dialogueId: 'mother', interactDist: 2.5 });
+    this.npcs.push({ mesh: mother, nameKey: 'characters.letizia', animator: new CharacterAnimator(mother), dialogueId: 'mother', objectiveFlag: 'ch1_talked_mother', interactDist: 2.5 });
 
     // NPC: 导师帕斯卡尔·保利
     const mentor = buildNPCCharacter({ clothColor: 0x4a3a6a, pantColor: 0x2a2040, hatColor: 0x2a2040, name: 'paoli' });
     mentor.position.set(-5, 0, 1);
     mentor.rotation.y = Math.PI / 3;
     scene.add(mentor);
-    this.npcs.push({ mesh: mentor, nameKey: 'characters.paoli', animator: new CharacterAnimator(mentor), dialogueId: 'mentor', interactDist: 2.5 });
+    this.npcs.push({ mesh: mentor, nameKey: 'characters.paoli', animator: new CharacterAnimator(mentor), dialogueId: 'mentor', objectiveFlag: 'ch1_talked_mentor', interactDist: 2.5 });
 
     return this.player;
   }

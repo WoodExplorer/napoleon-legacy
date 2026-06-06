@@ -26,13 +26,13 @@ export class Chapter3Scene {
     talleyrand.position.set(4, 0, -2);
     talleyrand.rotation.y = -Math.PI / 3;
     scene.add(talleyrand);
-    this.npcs.push({ mesh: talleyrand, nameKey: 'characters.talleyrand', animator: new CharacterAnimator(talleyrand), dialogueId: 'talleyrand', interactDist: 2.5 });
+    this.npcs.push({ mesh: talleyrand, nameKey: 'characters.talleyrand', animator: new CharacterAnimator(talleyrand), dialogueId: 'talleyrand', objectiveFlag: 'ch3_talked_talleyrand', interactDist: 2.5 });
 
     const josephine = buildNPCCharacter({ clothColor: 0xd4748c, pantColor: 0xb45870, skinColor: 0xf5d5c0, name: 'josephine' });
     josephine.position.set(-4, 0, 1);
     josephine.rotation.y = Math.PI / 4;
     scene.add(josephine);
-    this.npcs.push({ mesh: josephine, nameKey: 'characters.josephine', animator: new CharacterAnimator(josephine), dialogueId: 'josephine', interactDist: 2.5 });
+    this.npcs.push({ mesh: josephine, nameKey: 'characters.josephine', animator: new CharacterAnimator(josephine), dialogueId: 'josephine', objectiveFlag: 'ch3_talked_josephine', interactDist: 2.5 });
     return this.player;
   }
 
