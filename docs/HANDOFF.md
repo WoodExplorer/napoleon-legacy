@@ -17,7 +17,8 @@
 - add a product settings panel
 - add performance HUD telemetry
 - add optional auto quality
-- latest: add low-FPS quality recommendation
+- add low-FPS quality recommendation
+- latest: add auto quality adjustment feedback
 
 ## What Changed
 
@@ -56,6 +57,7 @@
 - Added `src/core/AutoQuality.js` for tested sustained-pressure downgrade decisions with cooldown protection.
 - Added an optional Auto Quality settings switch; when enabled, low FPS telemetry can automatically step graphics down one preset and persist the safer quality.
 - Added a tested low-FPS recommendation controller for manual mode, plus a localized in-game toast that can enable Auto Quality or be dismissed.
+- Added a localized auto-quality adjustment toast so players are told when Auto Quality lowers graphics to a safer preset.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -89,6 +91,7 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Performance badge renders in the first chapter HUD, reports live FPS and active quality shorthand, and updates when the graphics preset changes.
 - Auto Quality toggle persists through settings, the HUD badge marks auto mode with `A`, and the first chapter keeps rendering with no console errors or warnings.
 - Low-FPS recommendation toast is present, localized, hidden by default, and does not disturb the first chapter HUD layout when inactive; prompt trigger/cooldown behavior is covered by unit tests.
+- Auto-quality adjustment toast shell is present, localized through the shared translation system, hidden by default, and does not disturb the first chapter HUD layout when inactive.
 
 ## Known Notes
 
@@ -106,5 +109,4 @@ npm run dev -- --host 127.0.0.1
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
-- Add visual confirmation when Auto Quality actually downgrades the preset during gameplay.
-- Extend the settings panel with camera sensitivity, subtitles, and accessibility contrast.
+- Add camera sensitivity, subtitle display, and accessibility contrast controls to the settings panel.
