@@ -34,6 +34,11 @@ import {
   INTRO_CAMERA_DEFAULTS,
 } from '../core/CinematicDirector.js';
 import {
+  computeDialogueCameraTarget,
+  computeDialogueFacing,
+  getFacingYaw,
+} from '../core/DialogueCamera.js';
+import {
   AUTO_GRAPHICS_STORAGE_KEY,
   DEFAULT_GRAPHICS_QUALITY,
   getLowerGraphicsQuality,
@@ -597,6 +602,41 @@ test('intro overlay stays visible before fading out near the end', () => {
   const complete = getIntroOverlayState(1);
   assertEqual(complete.visible, false);
   assertClose(complete.opacity, 0);
+});
+
+console.log('\nDialogueCamera');
+test('computes facing yaw for player and NPC dialogue lock', () => {
+  assertClose(getFacingYaw({ x: 0, z: 0 }, { x: 0, z: 3 }), 0);
+  assertClose(getFacingYaw({ x: 0, z: 0 }, { x: 3, z: 0 }), Math.PI / 2);
+  const facing = computeDialogueFacing({ x: 0, z: 0 }, { x: 0, z: 3 });
+  assertClose(facing.playerYaw, 0);
+  assertClose(facing.npcYaw, Math.PI);
+});
+
+test('builds an over-shoulder dialogue camera target between actors', () => {
+  const target = computeDialogueCameraTarget(
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 4 },
+    { distance: 3, sideOffset: 1, height: 1.6, lookAtHeight: 1.1, fov: 50 }
+  );
+  assertClose(target.position.x, 1);
+  assertClose(target.position.y, 1.6);
+  assertClose(target.position.z, -1);
+  assertClose(target.lookAt.x, 0);
+  assertClose(target.lookAt.y, 1.1);
+  assertClose(target.lookAt.z, 2);
+  assertEqual(target.fov, 50);
+  assertEqual(target.obstructed, false);
+});
+
+test('dialogue camera falls back to a stable forward axis for overlapping actors', () => {
+  const target = computeDialogueCameraTarget(
+    { x: 2, y: 0, z: 2 },
+    { x: 2, y: 0, z: 2 },
+    { distance: 2, sideOffset: 0.5 }
+  );
+  assertClose(target.position.x, 2.5);
+  assertClose(target.position.z, 0);
 });
 
 console.log('\nGraphicsSettings');

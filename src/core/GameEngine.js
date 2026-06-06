@@ -15,6 +15,7 @@ import { AutoQualityController, QualityRecommendationController } from './AutoQu
 import { computeCameraRigTarget, smoothCameraRigPose } from './CameraRig.js';
 import { loadCameraSensitivity, normalizeCameraSensitivity, saveCameraSensitivity } from './CameraSettings.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
+import { computeDialogueCameraTarget, computeDialogueFacing } from './DialogueCamera.js';
 import {
   getGraphicsPreset,
   getNextGraphicsQuality,
@@ -60,6 +61,7 @@ export class GameEngine {
     this.player = null;
     this.input = new InputController();
     this.dialogue = null;
+    this.dialogueFocus = null;
     this.audio = new AudioDirector();
     this.plotEngine = null;
     this.gameState = null;
@@ -295,6 +297,7 @@ export class GameEngine {
     this.gameState = gameState;
     pe.onEnterExplore = (node) => {
       this.inDialogue = false;
+      this.dialogueFocus = null;
       this.dialogue.hide();
       if (this.currentChapterScene && this.currentChapterScene.npcs) {
         this.currentChapterScene.npcs.forEach(n => n.animator && n.animator.setState('idle'));
@@ -339,6 +342,7 @@ export class GameEngine {
   loadChapterScene(chapterScene) {
     this.inDialogue = false;
     this.isPaused = false;
+    this.dialogueFocus = null;
     if (this.dialogue) this.dialogue.hide();
 
     // 清空旧场景
@@ -564,6 +568,14 @@ export class GameEngine {
 
   _updateCameraTarget(options = {}) {
     if (!this.player) return;
+    if (this.inDialogue && this.dialogueFocus?.mesh?.position) {
+      this.cameraRigTarget = computeDialogueCameraTarget(
+        this.player.position,
+        this.dialogueFocus.mesh.position
+      );
+      return;
+    }
+
     this.cameraRigTarget = computeCameraRigTarget({
       playerPosition: this.player.position,
       playerRotationY: this.player.rotation.y,
@@ -832,6 +844,11 @@ export class GameEngine {
   _updateObjectiveCompass(missionState) {
     const ui = this.missionUI;
     if (!ui?.compass || !missionState || !this.player) return;
+    if (this.inDialogue) {
+      this._hideObjectiveCompass();
+      return;
+    }
+
     const state = buildObjectiveCompassState(
       missionState,
       this.player.position,
@@ -856,13 +873,15 @@ export class GameEngine {
     if (!this.dialogue || !this.currentChapterScene) return;
 
     this.audio.playUi();
+    this.dialogueFocus = npc;
     if (npc.animator) npc.animator.setState('talk');
     if (this.currentChapterScene.playerAnimator) {
       this.currentChapterScene.playerAnimator.setState('talk');
     }
-    const dx = npc.mesh.position.x - this.player.position.x;
-    const dz = npc.mesh.position.z - this.player.position.z;
-    this.player.rotation.y = Math.atan2(dx, dz);
+    const facing = computeDialogueFacing(this.player.position, npc.mesh.position);
+    this.player.rotation.y = facing.playerYaw;
+    npc.mesh.rotation.y = facing.npcYaw;
+    this._updateCameraTarget();
 
     if (this.plotEngine && this.plotEngine.handleInteract(npc.dialogueId)) {
       return;
@@ -873,6 +892,7 @@ export class GameEngine {
     const nodes = this.currentChapterScene.getDialogue(npc.dialogueId);
     if (!nodes || nodes.length === 0) {
       this.inDialogue = false;
+      this.dialogueFocus = null;
       return;
     }
 
@@ -880,6 +900,7 @@ export class GameEngine {
     const showLegacyNode = () => {
       if (nodeIndex >= nodes.length) {
         this.inDialogue = false;
+        this.dialogueFocus = null;
         this.dialogue.hide();
         if (npc.animator) npc.animator.setState('idle');
         if (this.currentChapterScene?.playerAnimator) {

@@ -22,7 +22,8 @@
 - add camera sensitivity settings
 - add enhanced subtitles setting
 - add third-person camera rig
-- latest: add objective compass navigation
+- add objective compass navigation
+- latest: add dialogue camera framing
 
 ## What Changed
 
@@ -70,6 +71,8 @@
 - Updated `GameEngine` to drive the Three.js camera from the CameraRig, including smooth chase-camera follow and camera avoidance against chapter collision objects and NPC blockers.
 - Added `src/ui/ObjectiveCompass.js` for tested target-heading math, side classification, nearest-incomplete-objective selection, and hidden-state handling.
 - Added a HUD objective compass showing the nearest incomplete target's relative direction, name, and distance, synchronized from mission state and the active camera pose.
+- Added `src/core/DialogueCamera.js` for tested NPC-facing yaw and over-shoulder dialogue camera targets.
+- Updated `GameEngine` to lock dialogue focus, rotate player/NPC actors toward one another, hide the objective compass while dialogue is active, and drive the camera through the dialogue framing target.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -83,7 +86,7 @@ npm run build
 
 Test result:
 
-- 60 passed / 0 failed
+- 63 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5173/`:
 
@@ -111,6 +114,8 @@ Browser checks performed at `http://127.0.0.1:5173/`:
 - Objective compass tests cover signed-angle normalization, camera/objective headings, side classification, nearest active target selection, visible state, and hidden state.
 - Objective compass renders in the first chapter HUD with the nearest target name, distance, right-side direction, CSS offset/rotation variables, and localized aria label; desktop console stayed free of error/warn entries.
 - Mobile viewport `390x844` renders the objective compass and mission panel with an 8px vertical gap, no overlap with the system buttons, visible canvas, and no console error/warn entries.
+- Dialogue camera tests cover player/NPC facing yaw, over-shoulder camera target placement, FOV, and overlapping-actor fallback behavior.
+- First chapter dialogue with Letizia triggers the dialogue camera path: dialogue UI is visible, the target compass hides during conversation, the canvas/HUD remain active, and browser console stayed free of application error/warn entries.
 
 ## Known Notes
 
