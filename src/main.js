@@ -147,6 +147,16 @@ async function ensureEngine() {
         progressFill: $('mission-progress-fill'),
         progressText: $('mission-progress-text'),
       });
+      created.setupCinematicIntro({
+        overlay: $('cinematic-intro'),
+        kicker: $('cinematic-kicker'),
+        number: $('cinematic-number'),
+        year: $('cinematic-year'),
+        title: $('cinematic-title'),
+        desc: $('cinematic-desc'),
+        progressFill: $('cinematic-progress-fill'),
+        skip: $('cinematic-skip'),
+      });
       setupMobileControls();
       setupPauseMenu();
       engine = created;
@@ -197,6 +207,7 @@ async function startChapter(index) {
     const scene = new SceneClass();
     readyEngine.loadChapterScene(scene);
     readyEngine.start();
+    readyEngine.playChapterIntro(ch);
 
     const startNodeId = `ch${index + 1}_start`;
     if (plotData[startNodeId]) {

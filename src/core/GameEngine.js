@@ -10,6 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
+import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
@@ -55,6 +56,8 @@ export class GameEngine {
     this.camDist = CAM_DIST_DEFAULT;
     this.pointerLook = null;
     this.missionUI = null;
+    this.cinematicUI = null;
+    this.cinematicIntro = null;
     this._missionSyncTimer = 0;
     this._movementBlocked = false;
     this._rafId = null;
@@ -99,7 +102,7 @@ export class GameEngine {
       this.canvas.setPointerCapture?.(e.pointerId);
     });
     this.canvas.addEventListener('pointermove', e => {
-      if (!this.pointerLook || this.inDialogue || this.isPaused) return;
+      if (!this.pointerLook || this.inDialogue || this.isPaused || this.cinematicIntro) return;
       const dx = e.clientX - this.pointerLook.x;
       const dy = e.clientY - this.pointerLook.y;
       this.pointerLook = { x: e.clientX, y: e.clientY };
@@ -131,6 +134,11 @@ export class GameEngine {
   setupMissionTracker(uiElements) {
     this.missionUI = uiElements;
     this._updateMissionTracker(true);
+  }
+
+  setupCinematicIntro(uiElements) {
+    this.cinematicUI = uiElements;
+    uiElements.skip?.addEventListener('click', () => this.skipCinematicIntro());
   }
 
   setPlotEngine(pe, gameState) {
@@ -201,8 +209,23 @@ export class GameEngine {
     // 重置相机参数
     this.camYaw = 0;
     this.camPitch = CAM_PITCH_DEFAULT;
+    this.camDist = CAM_DIST_DEFAULT;
     this._updateCamera();
     this._updateMissionTracker(true);
+  }
+
+  playChapterIntro(chapter, options = {}) {
+    if (!this.player) return;
+    this.cinematicIntro = createIntroState(options);
+    this._renderCinematicIntro(chapter, 0);
+    this._applyCinematicPose(getIntroCameraPose(this.cinematicIntro));
+  }
+
+  skipCinematicIntro() {
+    if (!this.cinematicIntro) return;
+    const pose = getIntroCameraPose(this.cinematicIntro, this.cinematicIntro.durationMs);
+    this._applyCinematicPose(pose);
+    this._finishCinematicIntro();
   }
 
   start() {
@@ -221,7 +244,11 @@ export class GameEngine {
     const delta = Math.min((now - this.lastFrameTime) / 1000, 0.05);
     this.lastFrameTime = now;
 
-    if (!this.isPaused && !this.inDialogue) {
+    if (this.cinematicIntro) {
+      this._updateCinematicIntro(delta);
+    }
+
+    if (!this.isPaused && !this.inDialogue && !this.cinematicIntro) {
       this._handleMovement(delta);
       this._handleCamera(delta);
       this._checkInteraction();
@@ -242,6 +269,52 @@ export class GameEngine {
     this.scene.traverse(object => {
       if (typeof object.userData?.tick === 'function') object.userData.tick(delta, object);
     });
+  }
+
+  _updateCinematicIntro(delta) {
+    const pose = getIntroCameraPose(this.cinematicIntro, delta * 1000);
+    this.cinematicIntro.elapsedMs = pose.elapsedMs;
+    this._applyCinematicPose(pose);
+    this._updateCinematicProgress(pose.progress);
+    if (pose.complete) this._finishCinematicIntro();
+  }
+
+  _applyCinematicPose(pose) {
+    this.camYaw = pose.yaw;
+    this.camPitch = pose.pitch;
+    this.camDist = pose.distance;
+    this._updateCamera();
+  }
+
+  _renderCinematicIntro(chapter, progress) {
+    if (!this.cinematicUI?.overlay || !chapter) return;
+    const ui = this.cinematicUI;
+    ui.overlay.classList.remove('hidden', 'fading');
+    if (ui.kicker) ui.kicker.textContent = t('cinematic.kicker');
+    if (ui.number) ui.number.textContent = chapter.number;
+    if (ui.year) ui.year.textContent = chapter.year;
+    if (ui.title) ui.title.textContent = chapter.title;
+    if (ui.desc) ui.desc.textContent = chapter.desc;
+    this._updateCinematicProgress(progress);
+  }
+
+  _updateCinematicProgress(progress) {
+    if (!this.cinematicUI?.overlay) return;
+    const overlayState = getIntroOverlayState(progress);
+    this.cinematicUI.overlay.style.opacity = String(Math.max(0, overlayState.opacity));
+    if (this.cinematicUI.progressFill) {
+      this.cinematicUI.progressFill.style.width = `${Math.round(overlayState.progress * 100)}%`;
+    }
+    if (!overlayState.visible) this.cinematicUI.overlay.classList.add('fading');
+  }
+
+  _finishCinematicIntro() {
+    this.cinematicIntro = null;
+    if (this.cinematicUI?.overlay) {
+      this.cinematicUI.overlay.style.opacity = '';
+      this.cinematicUI.overlay.classList.add('hidden');
+      this.cinematicUI.overlay.classList.remove('fading');
+    }
   }
 
   _handleMovement(delta) {

@@ -42,6 +42,10 @@ export const zhCN = {
     kicker: '战役命令',
     progress: '已完成 {complete}/{total}',
   },
+  cinematic: {
+    kicker: '历史剧场',
+    skip: '跳过',
+  },
   game: {
     interactPrompt: '与 {name} 交谈',
     dialogueContinue: '点击继续',
