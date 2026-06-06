@@ -222,6 +222,11 @@ async function ensureEngine() {
       created.setupGraphicsControls({
         toggle: $('graphics-quality-toggle'),
       });
+      created.setupPerformanceHud({
+        badge: $('performance-badge'),
+        fps: $('performance-fps'),
+        quality: $('performance-quality'),
+      });
       setupMobileControls();
       setupPauseMenu();
       engine = created;

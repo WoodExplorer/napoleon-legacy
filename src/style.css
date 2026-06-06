@@ -197,6 +197,28 @@ html, body {
 .hud-system-buttons {
   display: flex; align-items: center; gap: 0.5rem; pointer-events: auto;
 }
+.performance-badge {
+  height: 34px; min-width: 82px; padding: 0 0.55rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.26rem;
+  border: 1px solid rgba(232,201,122,0.22); border-radius: 7px;
+  background: rgba(5,13,21,0.42); color: rgba(240,232,213,0.76);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+  font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.04em;
+}
+#performance-fps { color: var(--text-primary); font-size: 0.78rem; }
+.performance-unit { color: rgba(240,232,213,0.42); font-size: 0.58rem; }
+#performance-quality {
+  min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 5px; background: rgba(232,201,122,0.12); color: var(--gold-light);
+  font-size: 0.62rem;
+}
+.performance-badge[data-status="stable"] { border-color: rgba(126,227,155,0.24); }
+.performance-badge[data-status="watch"] { border-color: rgba(232,201,122,0.34); }
+.performance-badge[data-status="strained"] { border-color: rgba(238,157,83,0.42); }
+.performance-badge[data-status="critical"] {
+  border-color: rgba(192,57,43,0.58); color: #ffb0a8;
+}
 .audio-toggle,
 .graphics-quality-toggle {
   width: 34px; height: 34px; border: 1px solid rgba(232,201,122,0.28); border-radius: 7px;
@@ -559,6 +581,8 @@ html, body {
   #dialogue-box { padding: 1.5rem 1.2rem 2rem; flex-direction: column; }
   .hud-controls-hint { display: none; }
   .hud-system-buttons { position: absolute; top: 1rem; right: 1rem; }
+  .performance-badge { min-width: 54px; padding: 0 0.38rem; }
+  .performance-unit { display: none; }
   #mission-panel { top: 4.25rem; right: 1rem; left: 1rem; width: auto; }
   .cinematic-copy { bottom: 5.4rem; }
   #cinematic-skip { right: 1rem; bottom: 1rem; }

@@ -28,6 +28,11 @@ import {
   resolveCircleCollision,
   resolvePlayerNavigation,
 } from '../core/MovementPhysics.js';
+import {
+  formatFps,
+  FrameRateSampler,
+  getPerformanceStatus,
+} from '../core/PerformanceMonitor.js';
 import { plotData } from '../data/plotData.js';
 import { getSceneRegistryMetadata, loadChapterSceneClass } from '../scenes/SceneRegistry.js';
 import { CHAPTERS } from '../ui/ChapterData.js';
@@ -526,6 +531,39 @@ test('persists graphics quality while tolerating broken storage', () => {
   };
   assertEqual(loadGraphicsQuality(brokenStorage), DEFAULT_GRAPHICS_QUALITY);
   assertEqual(saveGraphicsQuality('low', brokenStorage), 'low');
+});
+
+console.log('\nPerformanceMonitor');
+test('classifies frame rate health for HUD status', () => {
+  assertEqual(getPerformanceStatus(60), 'stable');
+  assertEqual(getPerformanceStatus(50), 'watch');
+  assertEqual(getPerformanceStatus(35), 'strained');
+  assertEqual(getPerformanceStatus(20), 'critical');
+  assertEqual(getPerformanceStatus(0), 'unknown');
+});
+
+test('formats FPS labels for compact HUD display', () => {
+  assertEqual(formatFps(59.6), '60');
+  assertEqual(formatFps(29.4), '29');
+  assertEqual(formatFps(0), '--');
+});
+
+test('samples rolling frame rate only after report intervals', () => {
+  const sampler = new FrameRateSampler({ windowMs: 1000, reportIntervalMs: 500 });
+  let snapshot = null;
+  for (let i = 0; i < 29; i++) snapshot = sampler.record(1 / 60);
+  assertEqual(snapshot, null);
+
+  snapshot = sampler.record(1 / 60);
+  assert(snapshot, 'Expected a frame-rate snapshot after the first report interval');
+  assertClose(snapshot.fps, 60, 0.5);
+  assertEqual(snapshot.status, 'stable');
+
+  for (let i = 0; i < 30; i++) sampler.record(1 / 20);
+  snapshot = sampler.getSnapshot();
+  assert(snapshot.fps < 35);
+  assert(snapshot.sampleCount <= 21);
+  assert(['strained', 'critical'].includes(snapshot.status));
 });
 
 console.log('\nAudioDirector');

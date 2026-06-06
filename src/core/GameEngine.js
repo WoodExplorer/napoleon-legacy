@@ -19,6 +19,7 @@ import {
   saveGraphicsQuality,
 } from './GraphicsSettings.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
+import { FrameRateSampler } from './PerformanceMonitor.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
 const MOVE_SPEED = 4.5;
@@ -67,6 +68,8 @@ export class GameEngine {
     this.cinematicUI = null;
     this.audioUI = null;
     this.graphicsUI = null;
+    this.performanceUI = null;
+    this.performance = new FrameRateSampler();
     this.graphicsQuality = loadGraphicsQuality();
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
     this.cinematicIntro = null;
@@ -133,6 +136,7 @@ export class GameEngine {
 
     this._applySceneShadowQuality();
     this._syncGraphicsControls();
+    this._syncPerformanceHud(this.performance.getSnapshot());
   }
 
   _applySceneShadowQuality() {
@@ -217,6 +221,11 @@ export class GameEngine {
     this._syncGraphicsControls();
   }
 
+  setupPerformanceHud(uiElements) {
+    this.performanceUI = uiElements;
+    this._syncPerformanceHud(this.performance.getSnapshot());
+  }
+
   setGraphicsQuality(quality, options = {}) {
     this.graphicsQuality = options.persist ? saveGraphicsQuality(quality) : getGraphicsPreset(quality).id;
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
@@ -231,6 +240,7 @@ export class GameEngine {
   refreshHudControls() {
     this._syncAudioControls();
     this._syncGraphicsControls();
+    this._syncPerformanceHud(this.performance.getSnapshot());
   }
 
   setPlotEngine(pe, gameState) {
@@ -346,6 +356,9 @@ export class GameEngine {
     if (this.cinematicIntro) {
       this._updateCinematicIntro(delta);
     }
+
+    const performanceSnapshot = this.performance.record(delta);
+    if (performanceSnapshot) this._syncPerformanceHud(performanceSnapshot);
 
     if (!this.isPaused && !this.inDialogue && !this.cinematicIntro) {
       this._handleMovement(delta);
@@ -538,6 +551,16 @@ export class GameEngine {
     this.graphicsUI.toggle.dataset.quality = preset.id;
     this.graphicsUI.toggle.dataset.shortLabel = preset.shortLabel;
     this.graphicsUI.toggle.textContent = preset.icon;
+  }
+
+  _syncPerformanceHud(snapshot) {
+    if (!this.performanceUI?.badge || !snapshot) return;
+    const preset = this.graphicsPreset;
+    const fpsLabel = snapshot.fpsLabel ?? '--';
+    this.performanceUI.badge.dataset.status = snapshot.status;
+    this.performanceUI.badge.setAttribute('title', `${fpsLabel} FPS · ${t(preset.labelKey)}`);
+    if (this.performanceUI.fps) this.performanceUI.fps.textContent = fpsLabel;
+    if (this.performanceUI.quality) this.performanceUI.quality.textContent = preset.shortLabel;
   }
 
   _attachObjectiveMarkers() {
