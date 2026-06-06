@@ -42,6 +42,7 @@ export const en = {
   mission: {
     kicker: 'Campaign Orders',
     progress: '{complete}/{total} secured',
+    compassLabel: 'Objective: {name}, {distance}',
   },
   cinematic: {
     kicker: 'Historical Theater',

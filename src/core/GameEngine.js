@@ -25,6 +25,7 @@ import {
 } from './GraphicsSettings.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { FrameRateSampler } from './PerformanceMonitor.js';
+import { buildObjectiveCompassState } from '../ui/ObjectiveCompass.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
 const MOVE_SPEED = 4.5;
@@ -72,6 +73,7 @@ export class GameEngine {
     this.cameraRigTarget = null;
     this.pointerLook = null;
     this.missionUI = null;
+    this.currentMissionState = null;
     this.cinematicUI = null;
     this.audioUI = null;
     this.graphicsUI = null;
@@ -420,6 +422,7 @@ export class GameEngine {
     if (!this.cinematicIntro) {
       this._updateCameraTarget();
       this._applyCameraRig(delta);
+      this._updateObjectiveCompass(this.currentMissionState);
     }
 
     if (this.currentChapterScene) this.currentChapterScene.update(delta);
@@ -793,11 +796,14 @@ export class GameEngine {
   _updateMissionTracker(force = false) {
     if (!this.missionUI?.panel || !this.currentChapterScene) return;
     const missionState = buildMissionState(this.currentChapterScene, this.gameState, t, this.player);
+    this.currentMissionState = missionState;
     this._updateObjectiveMarkers(missionState);
+    this._updateObjectiveCompass(missionState);
 
     const { panel, list, progressFill, progressText } = this.missionUI;
     if (missionState.total === 0) {
       panel.classList.add('hidden');
+      this._hideObjectiveCompass();
       return;
     }
     panel.classList.remove('hidden');
@@ -817,6 +823,33 @@ export class GameEngine {
         </li>
       `).join('');
     }
+  }
+
+  _hideObjectiveCompass() {
+    this.missionUI?.compass?.classList.add('hidden');
+  }
+
+  _updateObjectiveCompass(missionState) {
+    const ui = this.missionUI;
+    if (!ui?.compass || !missionState || !this.player) return;
+    const state = buildObjectiveCompassState(
+      missionState,
+      this.player.position,
+      this.cameraRigPose || this.cameraRigTarget
+    );
+
+    ui.compass.classList.toggle('hidden', !state.visible);
+    if (!state.visible) return;
+
+    ui.compass.dataset.side = state.side;
+    ui.compass.style.setProperty('--objective-offset', `${state.offsetPx}px`);
+    ui.compass.style.setProperty('--objective-arrow-rotation', `${state.arrowRotationDeg}deg`);
+    ui.compass.setAttribute('aria-label', t('mission.compassLabel', {
+      name: state.name,
+      distance: state.distanceLabel,
+    }));
+    if (ui.compassName) ui.compassName.textContent = state.name;
+    if (ui.compassDistance) ui.compassDistance.textContent = state.distanceLabel;
   }
 
   _startDialogue(npc) {

@@ -21,7 +21,8 @@
 - add auto quality adjustment feedback
 - add camera sensitivity settings
 - add enhanced subtitles setting
-- latest: add third-person camera rig
+- add third-person camera rig
+- latest: add objective compass navigation
 
 ## What Changed
 
@@ -67,6 +68,8 @@
 - Added enhanced subtitle styling for dialogue text: larger copy, stronger backdrop, higher-contrast continuation hint, and immediate body-class application.
 - Added `src/core/CameraRig.js` for tested third-person camera math, zoom clamping, scene-obstacle distance resolution, smoothing, and motion FOV feedback.
 - Updated `GameEngine` to drive the Three.js camera from the CameraRig, including smooth chase-camera follow and camera avoidance against chapter collision objects and NPC blockers.
+- Added `src/ui/ObjectiveCompass.js` for tested target-heading math, side classification, nearest-incomplete-objective selection, and hidden-state handling.
+- Added a HUD objective compass showing the nearest incomplete target's relative direction, name, and distance, synchronized from mission state and the active camera pose.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -80,7 +83,7 @@ npm run build
 
 Test result:
 
-- 54 passed / 0 failed
+- 60 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5173/`:
 
@@ -105,6 +108,9 @@ Browser checks performed at `http://127.0.0.1:5173/`:
 - Enhanced subtitles toggle renders in settings, switches from Off to On, applies the `enhanced-subtitles` body class immediately, and increases dialogue text sizing without console errors.
 - Third-person camera rig tests cover zoom clamping, default chase-camera pose, obstacle distance shortening, motion/blocked FOV feedback, and non-snapping smoothing.
 - First chapter renders at 1280x720 in the in-app browser after the camera rig change; drag-look and wheel zoom keep the HUD active with no console error/warn entries.
+- Objective compass tests cover signed-angle normalization, camera/objective headings, side classification, nearest active target selection, visible state, and hidden state.
+- Objective compass renders in the first chapter HUD with the nearest target name, distance, right-side direction, CSS offset/rotation variables, and localized aria label; desktop console stayed free of error/warn entries.
+- Mobile viewport `390x844` renders the objective compass and mission panel with an 8px vertical gap, no overlap with the system buttons, visible canvas, and no console error/warn entries.
 
 ## Known Notes
 
