@@ -10,6 +10,16 @@ export class Chapter2Scene {
     this.npcs = [];
     this.scene = null;
     this.barrels = [];
+    this.worldBounds = { minX: -18, maxX: 18, minZ: -18, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'box', x: 8, z: -5, width: 6.8, depth: 4.8 },
+      { type: 'box', x: 8, z: -3, width: 7.5, depth: 0.9 },
+      { type: 'box', x: 0, z: -2, width: 5.4, depth: 0.9 },
+      { type: 'circle', x: -2, z: 0, radius: 0.45 },
+      { type: 'circle', x: 0, z: 0, radius: 0.45 },
+      { type: 'circle', x: 2, z: 0, radius: 0.45 },
+      { type: 'box', x: 0, z: -20, width: 30, depth: 5 },
+    ];
   }
 
   build(scene) {

@@ -7,6 +7,17 @@ export class Chapter7Scene {
   constructor() {
     this.id = 'chapter7'; this.index = 6;
     this.npcs = []; this.scene = null;
+    this.worldBounds = { minX: -18, maxX: 18, minZ: -14, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'box', x: 6, z: -6, width: 7.8, depth: 5.8 },
+      { type: 'box', x: 0, z: -25, width: 60, depth: 10 },
+      { type: 'circle', x: 10, z: -12, radius: 1 },
+      { type: 'circle', x: -8, z: -10, radius: 1 },
+      { type: 'circle', x: 5, z: -15, radius: 1 },
+      { type: 'box', x: 0, z: -2, width: 1.5, depth: 0.7 },
+      { type: 'circle', x: -5, z: -4, radius: 0.9 },
+      { type: 'circle', x: 8, z: -4, radius: 0.9 },
+    ];
   }
 
   build(scene) {

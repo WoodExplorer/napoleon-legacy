@@ -8,7 +8,8 @@
 
 - `e1eb512 Add localized narrative resources`
 - `b2cc72d Enhance 3D scene atmosphere`
-- latest: add campaign mission director and cinematic target feedback
+- `8aad011 Add campaign mission director`
+- latest: add world navigation boundaries and collision
 
 ## What Changed
 
@@ -24,6 +25,9 @@
 - Added 3D target feedback for NPC objectives: animated overhead markers, glowing ground rings, active-target emphasis, and completed-target state.
 - Added a Three.js postprocessing pipeline with `EffectComposer`, `RenderPass`, `UnrealBloomPass`, and `OutputPass` for richer highlights.
 - Added explicit objective flags to each chapter scene so plot flags, NPCs, HUD objectives, and 3D markers remain aligned.
+- Added `src/core/MovementPhysics.js` for tested world bounds, circle collision, box collision, and combined navigation resolution.
+- Added chapter-level `worldBounds` and `collisionObjects` across all seven scenes for major buildings, terrain props, water edges, hills, trees, benches, banners, and NPC blockers.
+- Updated movement handling so the player is constrained by scene geometry and does not keep walking in place when fully blocked.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -37,7 +41,7 @@ npm run build
 
 Test result:
 
-- 20 passed / 0 failed
+- 24 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5174/`:
 

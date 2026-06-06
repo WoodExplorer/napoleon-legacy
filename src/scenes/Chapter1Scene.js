@@ -11,6 +11,20 @@ export class Chapter1Scene {
     this.scene = null;
     this.player = null;
     this.playerAnimator = null;
+    this.worldBounds = { minX: -18, maxX: 18, minZ: -16, maxZ: 15 };
+    this.collisionObjects = [
+      { type: 'box', x: 5, z: -3, width: 4.8, depth: 3.8 },
+      { type: 'box', x: -6, z: -4, width: 2.6, depth: 2.6 },
+      { type: 'box', x: 0, z: 1, width: 2.4, depth: 0.5 },
+      { type: 'box', x: 2, z: -1, width: 0.5, depth: 2.4 },
+      { type: 'box', x: 4, z: 1, width: 2.4, depth: 0.5 },
+      { type: 'circle', x: -3, z: 4, radius: 0.9 },
+      { type: 'circle', x: -5, z: 8, radius: 0.9 },
+      { type: 'circle', x: 3, z: 6, radius: 0.9 },
+      { type: 'circle', x: 6, z: 3, radius: 0.9 },
+      { type: 'circle', x: -2, z: -5, radius: 0.9 },
+      { type: 'circle', x: 4, z: -4, radius: 0.9 },
+    ];
   }
 
   build(scene) {

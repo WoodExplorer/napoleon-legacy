@@ -1,4 +1,10 @@
 import { PlotEngine } from '../core/PlotEngine.js';
+import {
+  clampToBounds,
+  resolveBoxCollision,
+  resolveCircleCollision,
+  resolvePlayerNavigation,
+} from '../core/MovementPhysics.js';
 import { plotData } from '../data/plotData.js';
 import { CHAPTERS } from '../ui/ChapterData.js';
 import {
@@ -31,6 +37,12 @@ function assert(value, message = 'Assertion failed') {
 
 function assertEqual(actual, expected, message) {
   if (actual !== expected) {
+    throw new Error(message || `Expected ${expected}, got ${actual}`);
+  }
+}
+
+function assertClose(actual, expected, epsilon = 0.001, message) {
+  if (Math.abs(actual - expected) > epsilon) {
     throw new Error(message || `Expected ${expected}, got ${actual}`);
   }
 }
@@ -326,6 +338,54 @@ test('builds mission progress from NPC flags and player distance', () => {
   assertEqual(mission.objectives[0].done, true);
   assertEqual(mission.objectives[0].distanceLabel, '5m');
   assertEqual(mission.objectives[1].done, false);
+});
+
+console.log('\nMovementPhysics');
+test('clamps player position inside world bounds with radius padding', () => {
+  const result = clampToBounds(
+    { x: 12, z: -12 },
+    { minX: -10, maxX: 10, minZ: -8, maxZ: 8 },
+    0.5
+  );
+  assertEqual(result.blocked, true);
+  assertClose(result.x, 9.5);
+  assertClose(result.z, -7.5);
+});
+
+test('pushes player out of circular obstacles', () => {
+  const result = resolveCircleCollision(
+    { x: 0.5, z: 0 },
+    { type: 'circle', x: 0, z: 0, radius: 1 },
+    0.5
+  );
+  assertEqual(result.blocked, true);
+  assertClose(result.x, 1.5);
+  assertClose(result.z, 0);
+});
+
+test('pushes player out of box obstacles along the shallowest axis', () => {
+  const result = resolveBoxCollision(
+    { x: 0.9, z: 0.1 },
+    { type: 'box', x: 0, z: 0, width: 2, depth: 2 },
+    0.25
+  );
+  assertEqual(result.blocked, true);
+  assertClose(result.x, 1.25);
+  assertClose(result.z, 0.1);
+});
+
+test('resolves combined bounds and obstacle navigation', () => {
+  const result = resolvePlayerNavigation(
+    { x: 2.4, z: 0 },
+    {
+      radius: 0.5,
+      bounds: { minX: -4, maxX: 4, minZ: -4, maxZ: 4 },
+      obstacles: [{ type: 'circle', x: 2, z: 0, radius: 0.75 }],
+    }
+  );
+  assertEqual(result.blocked, true);
+  assertClose(result.x, 3.25);
+  assertClose(result.z, 0);
 });
 
 console.log(`\nResult: ${passed} passed / ${failed} failed`);

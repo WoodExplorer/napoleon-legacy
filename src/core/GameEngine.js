@@ -10,6 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
+import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
 const MOVE_SPEED = 4.5;
@@ -18,6 +19,7 @@ const CAM_SPEED = 1.8;
 const INTERACT_DIST = 2.5;
 const CAM_DIST_DEFAULT = 3.8;
 const CAM_PITCH_DEFAULT = -0.18;
+const NPC_COLLISION_RADIUS = 0.62;
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, char => ({
@@ -54,6 +56,7 @@ export class GameEngine {
     this.pointerLook = null;
     this.missionUI = null;
     this._missionSyncTimer = 0;
+    this._movementBlocked = false;
     this._rafId = null;
     this._init();
   }
@@ -251,16 +254,41 @@ export class GameEngine {
     const anim = this.currentChapterScene?.playerAnimator;
     if (inp.forward || inp.backward) {
       const dir = inp.forward ? 1 : -1;
+      const startX = this.player.position.x;
+      const startZ = this.player.position.z;
       const dx = Math.sin(this.player.rotation.y) * MOVE_SPEED * delta * dir;
       const dz = Math.cos(this.player.rotation.y) * MOVE_SPEED * delta * dir;
-      this.player.position.x += dx;
-      this.player.position.z += dz;
-      if (anim) anim.setState('walk');
+      const next = this._resolvePlayerNavigation(this.player.position.x + dx, this.player.position.z + dz);
+      this.player.position.x = next.x;
+      this.player.position.z = next.z;
+      this._movementBlocked = next.blocked;
+      const movedSq = (next.x - startX) ** 2 + (next.z - startZ) ** 2;
+      if (anim) anim.setState(movedSq > 0.00001 ? 'walk' : 'idle');
     } else {
+      this._movementBlocked = false;
       if (anim) anim.setState('idle');
     }
 
     this._updateCamera();
+  }
+
+  _resolvePlayerNavigation(x, z) {
+    const sceneObstacles = this.currentChapterScene?.collisionObjects || [];
+    const npcObstacles = (this.currentChapterScene?.npcs || []).map(npc => ({
+      type: 'circle',
+      x: npc.mesh.position.x,
+      z: npc.mesh.position.z,
+      radius: npc.collisionRadius ?? NPC_COLLISION_RADIUS,
+    }));
+
+    return resolvePlayerNavigation(
+      { x, z },
+      {
+        radius: this.currentChapterScene?.playerRadius ?? DEFAULT_PLAYER_RADIUS,
+        bounds: this.currentChapterScene?.worldBounds,
+        obstacles: [...sceneObstacles, ...npcObstacles],
+      }
+    );
   }
 
   _handleCamera(delta) {

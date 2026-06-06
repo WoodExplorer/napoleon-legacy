@@ -8,6 +8,13 @@ export class Chapter5Scene {
   constructor() {
     this.id = 'chapter5'; this.index = 4;
     this.npcs = []; this.scene = null;
+    this.worldBounds = { minX: -20, maxX: 20, minZ: -18, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'box', x: 7, z: -8, width: 5.8, depth: 5.8 },
+      { type: 'circle', x: 7, z: -8, radius: 1.35 },
+      { type: 'box', x: -7, z: -6, width: 3.6, depth: 3.6 },
+      { type: 'box', x: 0, z: -20, width: 30, depth: 5 },
+    ];
   }
   build(scene) {
     this.scene = scene;
@@ -89,6 +96,12 @@ export class Chapter6Scene {
   constructor() {
     this.id = 'chapter6'; this.index = 5;
     this.npcs = []; this.scene = null;
+    this.worldBounds = { minX: -22, maxX: 22, minZ: -22, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'circle', x: -6, z: -10, radius: 6 },
+      { type: 'circle', x: -4, z: -2.5, radius: 0.55 },
+      { type: 'circle', x: 4, z: -2.5, radius: 0.55 },
+    ];
   }
   build(scene) {
     this.scene = scene;
