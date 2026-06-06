@@ -53,6 +53,12 @@ import {
   saveGraphicsQuality,
 } from '../core/GraphicsSettings.js';
 import {
+  buildInteractionPromptState,
+  formatInteractionDistance,
+  getInteractionDistance,
+  getNearestInteractionTarget,
+} from '../core/InteractionDirector.js';
+import {
   clampToBounds,
   resolveBoxCollision,
   resolveCircleCollision,
@@ -491,6 +497,73 @@ test('hides compass when no incomplete positioned objective exists', () => {
   assertEqual(buildObjectiveCompassState({
     objectives: [{ id: 'done', done: true, position: { x: 0, z: 1 } }],
   }, { x: 0, z: 0 }, null).visible, false);
+});
+
+console.log('\nInteractionDirector');
+test('measures and formats interaction target distance', () => {
+  const player = { position: { x: 0, z: 0 } };
+  const npc = { mesh: { position: { x: 3, z: 4 } } };
+  assertClose(getInteractionDistance(player, npc), 5);
+  assertEqual(formatInteractionDistance(4.6), '5m');
+  assertEqual(formatInteractionDistance(Infinity), '--');
+});
+
+test('selects nearest NPC inside awareness range', () => {
+  const player = { position: { x: 0, z: 0 } };
+  const near = { id: 'near', mesh: { position: { x: 0, z: 3 } } };
+  const far = { id: 'far', mesh: { position: { x: 0, z: 8 } } };
+  const target = getNearestInteractionTarget(player, [far, near], { awarenessDist: 6 });
+  assertEqual(target.npc.id, 'near');
+  assertEqual(getNearestInteractionTarget(player, [far], { awarenessDist: 6 }), null);
+});
+
+test('builds approach and ready interaction prompt states', () => {
+  const player = { position: { x: 0, z: 0 } };
+  const npc = {
+    nameKey: 'characters.letizia',
+    interactDist: 2.5,
+    mesh: { position: { x: 0, z: 5 } },
+  };
+  const approach = buildInteractionPromptState(player, [npc], key => key.split('.').pop(), {
+    awarenessDist: 6.5,
+  });
+  assertEqual(approach.visible, true);
+  assertEqual(approach.canInteract, false);
+  assertEqual(approach.name, 'letizia');
+  assertEqual(approach.distanceLabel, '5m');
+  assert(approach.progress > 0 && approach.progress < 1);
+
+  npc.mesh.position.z = 2;
+  const ready = buildInteractionPromptState(player, [npc], key => key, { awarenessDist: 6.5 });
+  assertEqual(ready.visible, true);
+  assertEqual(ready.canInteract, true);
+  assertEqual(ready.progress, 1);
+});
+
+test('allows a small ready assist radius near interaction targets', () => {
+  const player = { position: { x: 0, z: 0 } };
+  const npc = {
+    name: 'Target',
+    interactDist: 2.5,
+    mesh: { position: { x: 0, z: 2.85 } },
+  };
+  const state = buildInteractionPromptState(player, [npc], key => key, {
+    awarenessDist: 6.5,
+    readyAssistDist: 0.4,
+  });
+  assertEqual(state.canInteract, true);
+  assertClose(state.readyDist, 2.9);
+  assertEqual(state.progress, 1);
+});
+
+test('suppresses interaction prompt state when disabled', () => {
+  const player = { position: { x: 0, z: 0 } };
+  const npc = { name: 'Target', mesh: { position: { x: 0, z: 1 } } };
+  const state = buildInteractionPromptState(player, [npc], key => key, {
+    enabled: false,
+    awarenessDist: 6.5,
+  });
+  assertEqual(state.visible, false);
 });
 
 console.log('\nMovementPhysics');

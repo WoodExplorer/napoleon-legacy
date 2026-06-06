@@ -76,6 +76,7 @@ export const en = {
   },
   game: {
     interactPrompt: 'Talk to {name}',
+    approachPrompt: 'Approach {name} · {distance}',
     dialogueContinue: 'Click to continue',
     pause: 'Paused',
     resume: 'Resume',
