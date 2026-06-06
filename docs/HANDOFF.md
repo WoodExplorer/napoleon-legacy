@@ -10,7 +10,8 @@
 - `b2cc72d Enhance 3D scene atmosphere`
 - `8aad011 Add campaign mission director`
 - `0ffbb7f Add world navigation constraints`
-- latest: add lazy chapter loading and split 3D engine chunks
+- `a8ae0e7 Lazy load 3D chapters`
+- latest: add cinematic chapter intro director
 
 ## What Changed
 
@@ -34,6 +35,9 @@
 - Reworked `startChapter` to load the engine, plot engine, plot data, and selected chapter scene in parallel with a localized chapter-loading overlay.
 - Removed the legacy dynamic `GameState.js` fallback import from `GameEngine`, replacing it with the active `gameState` reference passed into the engine.
 - Tuned Vite's chunk warning budget to account for the expected isolated Three.js vendor chunk while keeping app chunks small.
+- Added `src/core/CinematicDirector.js` for tested chapter intro camera interpolation, easing, and overlay fade behavior.
+- Added an in-game cinematic intro overlay with localized chapter theater label, chapter number, year, title, description, progress line, and skip button.
+- Updated `GameEngine` to lock player control during chapter intros, animate from an establishing camera to the default third-person camera, and release control after completion or skip.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -47,7 +51,7 @@ npm run build
 
 Test result:
 
-- 27 passed / 0 failed
+- 30 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5174/`:
 
@@ -59,6 +63,7 @@ Browser checks performed at `http://127.0.0.1:5174/`:
 - Screenshot pixel checks confirmed nonblank desktop and mobile scene renders.
 - Fresh browser console check showed no new warnings or errors after replacing deprecated Three.js usages.
 - Production build now emits separate chunks for the main menu, GameEngine, PlotEngine, plot data, Three.js, and each chapter scene.
+- Chapter intro overlay renders on first chapter load, fades/skips correctly, and leaves the mission HUD/canvas active afterward.
 
 ## Known Notes
 
@@ -74,4 +79,4 @@ npm run dev -- --host 127.0.0.1
 - Consider adding prefetching for the next unlocked chapter after the current scene becomes interactive.
 - Replace the legacy dialogue fallback paths with the data-driven `PlotEngine` path everywhere.
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
-- Add authored loading-screen art or per-chapter intro shots while lazy chunks are loading.
+- Add authored per-chapter camera paths and keyframed scene events for the intro director.

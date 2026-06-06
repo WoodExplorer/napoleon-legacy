@@ -1,5 +1,12 @@
 import { PlotEngine } from '../core/PlotEngine.js';
 import {
+  createIntroState,
+  easeInOutCubic,
+  getIntroCameraPose,
+  getIntroOverlayState,
+  INTRO_CAMERA_DEFAULTS,
+} from '../core/CinematicDirector.js';
+import {
   clampToBounds,
   resolveBoxCollision,
   resolveCircleCollision,
@@ -426,6 +433,41 @@ await testAsync('rejects unknown chapter scene indexes', async () => {
     rejected = error instanceof RangeError;
   }
   assert(rejected, 'Expected an out-of-range chapter index to reject');
+});
+
+console.log('\nCinematicDirector');
+test('intro easing clamps outside input range', () => {
+  assertEqual(easeInOutCubic(-1), 0);
+  assertEqual(easeInOutCubic(2), 1);
+  assertClose(easeInOutCubic(0.5), 0.5);
+});
+
+test('intro camera pose interpolates from establishing shot to gameplay camera', () => {
+  const state = createIntroState({ durationMs: 1000 });
+  const start = getIntroCameraPose(state, 0);
+  assertClose(start.yaw, INTRO_CAMERA_DEFAULTS.startYaw);
+  assertClose(start.pitch, INTRO_CAMERA_DEFAULTS.startPitch);
+  assertClose(start.distance, INTRO_CAMERA_DEFAULTS.startDistance);
+
+  const end = getIntroCameraPose(state, 1000);
+  assertEqual(end.complete, true);
+  assertClose(end.yaw, INTRO_CAMERA_DEFAULTS.endYaw);
+  assertClose(end.pitch, INTRO_CAMERA_DEFAULTS.endPitch);
+  assertClose(end.distance, INTRO_CAMERA_DEFAULTS.endDistance);
+});
+
+test('intro overlay stays visible before fading out near the end', () => {
+  const early = getIntroOverlayState(0.5);
+  assertEqual(early.visible, true);
+  assertClose(early.opacity, 1);
+
+  const late = getIntroOverlayState(0.9);
+  assertEqual(late.visible, true);
+  assert(late.opacity < 1 && late.opacity > 0);
+
+  const complete = getIntroOverlayState(1);
+  assertEqual(complete.visible, false);
+  assertClose(complete.opacity, 0);
 });
 
 console.log(`\nResult: ${passed} passed / ${failed} failed`);

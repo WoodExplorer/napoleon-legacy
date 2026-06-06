@@ -42,6 +42,10 @@ export const en = {
     kicker: 'Campaign Orders',
     progress: '{complete}/{total} secured',
   },
+  cinematic: {
+    kicker: 'Historical Theater',
+    skip: 'Skip',
+  },
   game: {
     interactPrompt: 'Talk to {name}',
     dialogueContinue: 'Click to continue',
