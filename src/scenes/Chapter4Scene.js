@@ -8,6 +8,13 @@ export class Chapter4Scene {
   constructor() {
     this.id = 'chapter4'; this.index = 3;
     this.npcs = []; this.scene = null;
+    this.worldBounds = { minX: -22, maxX: 22, minZ: -22, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'circle', x: 5, z: -8, radius: 4.2 },
+      { type: 'circle', x: 0, z: -1, radius: 0.42 },
+      { type: 'circle', x: -5, z: -3, radius: 0.55 },
+      { type: 'circle', x: 5, z: -3, radius: 0.55 },
+    ];
   }
   build(scene) {
     this.scene = scene;
