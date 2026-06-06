@@ -1,7 +1,10 @@
+import { translateNode } from '../i18n/index.js';
+
 export class PlotEngine {
-  constructor(plotData, gameState) {
+  constructor(plotData, gameState, localizeNode = translateNode) {
     this.plotData = plotData;
     this.gameState = gameState;
+    this.localizeNode = localizeNode;
     this.currentNodeId = null;
 
     // Callbacks to hook into the game UI and 3D engine
@@ -17,7 +20,8 @@ export class PlotEngine {
   }
 
   _executeNode() {
-    const node = this.plotData[this.currentNodeId];
+    const rawNode = this.plotData[this.currentNodeId];
+    const node = this.localizeNode(rawNode);
     if (!node) {
       console.warn(`Node ${this.currentNodeId} not found!`);
       return;

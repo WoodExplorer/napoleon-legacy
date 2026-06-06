@@ -2,22 +2,30 @@
  * main.js - 游戏入口，UI流程管理
  */
 import './style.css';
-import { GameEngine } from './core/GameEngine.js';
+import {
+  loadEnhancedSubtitles,
+  saveEnhancedSubtitles,
+} from './core/AccessibilitySettings.js';
 import { gameState } from './core/GameState.js';
 import { MobileJoystick } from './controls/InputController.js';
-import { CHAPTERS } from './ui/ChapterData.js';
+import { CHAPTERS, getChapter } from './ui/ChapterData.js';
 import { renderSummary } from './ui/SummaryUI.js';
-import { Chapter1Scene } from './scenes/Chapter1Scene.js';
-import { Chapter2Scene } from './scenes/Chapter2Scene.js';
-import { Chapter3Scene } from './scenes/Chapter3Scene.js';
-import { Chapter4Scene } from './scenes/Chapter4Scene.js';
-import { Chapter5Scene, Chapter6Scene } from './scenes/Chapter56Scene.js';
-import { Chapter7Scene } from './scenes/Chapter7Scene.js';
-
-const SCENE_CLASSES = [
-  Chapter1Scene, Chapter2Scene, Chapter3Scene, Chapter4Scene,
-  Chapter5Scene, Chapter6Scene, Chapter7Scene,
-];
+import { applyTranslations } from './i18n/dom.js';
+import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
+import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
+import {
+  formatCameraSensitivity,
+  loadCameraSensitivity,
+  saveCameraSensitivity,
+} from './core/CameraSettings.js';
+import {
+  getGraphicsPreset,
+  getGraphicsPresetOptions,
+  loadAutoGraphicsEnabled,
+  loadGraphicsQuality,
+  saveAutoGraphicsEnabled,
+  saveGraphicsQuality,
+} from './core/GraphicsSettings.js';
 
 // ---- DOM Elements ----
 const $ = id => document.getElementById(id);
@@ -29,22 +37,162 @@ const gameUI = $('game-ui');
 const finalSummary = $('final-summary');
 const aboutScreen = $('about-screen');
 const pauseMenu = $('pause-menu');
+const settingsPanel = $('settings-panel');
 const chapterComplete = $('chapter-complete');
 const mobileControls = $('mobile-controls');
 
 let engine = null;
+let engineReadyPromise = null;
+let settingsReturnTarget = 'main';
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  })[char]);
+}
+
+function syncLocaleButtons() {
+  document.querySelectorAll('[data-locale]').forEach(button => {
+    const active = button.dataset.locale === getLocale();
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function refreshVisibleText() {
+  applyTranslations();
+  syncLocaleButtons();
+  if (!chapterSelect.classList.contains('hidden')) renderChapterSelect();
+  if (!finalSummary.classList.contains('hidden')) renderSummary();
+  if (!settingsPanel.classList.contains('hidden')) renderSettingsPanel();
+  if (!gameUI.classList.contains('hidden')) {
+    const ch = getChapter(gameState.currentChapter);
+    $('hud-chapter-num').textContent = ch.number;
+    $('hud-chapter-name').textContent = ch.title;
+    engine?.refreshHudControls();
+  }
+}
+
+function getActiveGraphicsQuality() {
+  return engine?.getGraphicsQuality?.() ?? loadGraphicsQuality();
+}
+
+function getAutoGraphicsEnabled() {
+  return engine?.getAutoGraphicsEnabled?.() ?? loadAutoGraphicsEnabled();
+}
+
+function getCameraSensitivity() {
+  return engine?.getCameraSensitivity?.() ?? loadCameraSensitivity();
+}
+
+function getEnhancedSubtitlesEnabled() {
+  return loadEnhancedSubtitles();
+}
+
+function applyAccessibilityPreferences() {
+  document.body.classList.toggle('enhanced-subtitles', getEnhancedSubtitlesEnabled());
+}
+
+function renderSettingsPanel() {
+  const list = $('settings-graphics-options');
+  const autoToggle = $('settings-auto-quality');
+  const subtitlesToggle = $('settings-enhanced-subtitles');
+  const sensitivityInput = $('settings-camera-sensitivity');
+  const sensitivityValue = $('settings-camera-sensitivity-value');
+  if (!list || !autoToggle || !subtitlesToggle || !sensitivityInput || !sensitivityValue) return;
+  const activeQuality = getActiveGraphicsQuality();
+  const autoEnabled = getAutoGraphicsEnabled();
+  const subtitlesEnabled = getEnhancedSubtitlesEnabled();
+  const sensitivity = getCameraSensitivity();
+  list.innerHTML = getGraphicsPresetOptions().map(preset => `
+    <button
+      type="button"
+      class="settings-option ${preset.id === activeQuality ? 'active' : ''}"
+      data-graphics-quality="${escapeHtml(preset.id)}"
+      aria-pressed="${preset.id === activeQuality}"
+    >
+      <span aria-hidden="true">${escapeHtml(preset.icon)}</span>
+      <span>${escapeHtml(t(preset.labelKey))}</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('[data-graphics-quality]').forEach(button => {
+    button.addEventListener('click', () => {
+      setGraphicsQualityFromSettings(button.dataset.graphicsQuality);
+    });
+  });
+
+  autoToggle.classList.toggle('active', autoEnabled);
+  autoToggle.setAttribute('aria-pressed', String(autoEnabled));
+  autoToggle.querySelector('.settings-switch-state').textContent = t(autoEnabled ? 'settings.on' : 'settings.off');
+  subtitlesToggle.classList.toggle('active', subtitlesEnabled);
+  subtitlesToggle.setAttribute('aria-pressed', String(subtitlesEnabled));
+  subtitlesToggle.querySelector('.settings-switch-state').textContent = t(subtitlesEnabled ? 'settings.on' : 'settings.off');
+  sensitivityInput.value = String(sensitivity);
+  sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
+}
+
+function setGraphicsQualityFromSettings(quality) {
+  const preset = engine
+    ? engine.setGraphicsQuality(quality, { persist: true })
+    : getGraphicsPreset(saveGraphicsQuality(quality));
+  renderSettingsPanel();
+  return preset;
+}
+
+function setAutoGraphicsFromSettings(enabled) {
+  const value = engine
+    ? engine.setAutoGraphicsEnabled(enabled, { persist: true })
+    : saveAutoGraphicsEnabled(enabled);
+  renderSettingsPanel();
+  return value;
+}
+
+function setCameraSensitivityFromSettings(value) {
+  const sensitivity = engine
+    ? engine.setCameraSensitivity(value, { persist: true })
+    : saveCameraSensitivity(value);
+  const sensitivityValue = $('settings-camera-sensitivity-value');
+  if (sensitivityValue) sensitivityValue.textContent = formatCameraSensitivity(sensitivity);
+  return sensitivity;
+}
+
+function setEnhancedSubtitlesFromSettings(enabled) {
+  const value = saveEnhancedSubtitles(enabled);
+  applyAccessibilityPreferences();
+  renderSettingsPanel();
+  return value;
+}
+
+function openSettingsPanel(returnTarget = 'main') {
+  settingsReturnTarget = returnTarget;
+  renderSettingsPanel();
+  settingsPanel.classList.remove('hidden');
+  if (returnTarget === 'pause') pauseMenu.classList.add('hidden');
+}
+
+function closeSettingsPanel() {
+  settingsPanel.classList.add('hidden');
+  if (settingsReturnTarget === 'pause' && engine?.isPaused && !gameUI.classList.contains('hidden')) {
+    pauseMenu.classList.remove('hidden');
+  }
+}
 
 // ---- Loading Sequence ----
 function simulateLoading() {
   const bar = $('loading-bar');
   const txt = $('loading-text');
   const steps = [
-    [20, '初始化Three.js渲染引擎...'],
-    [45, '构建历史场景...'],
-    [65, '生成角色模型...'],
-    [80, '加载对话系统...'],
-    [95, '准备就绪...'],
-    [100, '欢迎来到拿破仑的世界！'],
+    [20, t('loading.steps.0')],
+    [45, t('loading.steps.1')],
+    [65, t('loading.steps.2')],
+    [80, t('loading.steps.3')],
+    [95, t('loading.steps.4')],
+    [100, t('loading.steps.5')],
   ];
   let i = 0;
   const tick = () => {
@@ -66,6 +214,18 @@ function showMainMenu() {
   if (gameState.hasSave()) $('btn-continue')?.classList.remove('hidden');
 }
 
+function showChapterLoading(message = t('loading.chapter')) {
+  loadingScreen.classList.remove('hidden');
+  const bar = $('loading-bar');
+  const txt = $('loading-text');
+  if (bar) bar.style.width = '72%';
+  if (txt) txt.textContent = message;
+}
+
+function hideChapterLoading() {
+  loadingScreen.classList.add('hidden');
+}
+
 // ---- Chapter Select ----
 function renderChapterSelect() {
   const list = $('chapter-list');
@@ -74,12 +234,13 @@ function renderChapterSelect() {
   list.innerHTML = CHAPTERS.map((ch, i) => {
     const unlocked = isDev || gameState.unlockedChapters.includes(i);
     const done = gameState.getChoicesForChapter(i).length > 0;
+    const localized = getChapter(i);
     return `
       <div class="chapter-card ${unlocked ? '' : 'locked'}" data-idx="${i}">
-        <div class="chapter-num">第${['一','二','三','四','五','六','七'][i]}章</div>
-        <div class="chapter-title">${ch.title}</div>
-        <div class="chapter-year">${ch.year}</div>
-        <div class="chapter-desc">${ch.desc}</div>
+        <div class="chapter-num">${escapeHtml(localized.number)}</div>
+        <div class="chapter-title">${escapeHtml(localized.title)}</div>
+        <div class="chapter-year">${escapeHtml(localized.year)}</div>
+        <div class="chapter-desc">${escapeHtml(localized.desc)}</div>
         <div class="chapter-status">${done ? '✅' : unlocked ? '▶' : '🔒'}</div>
       </div>`;
   }).join('');
@@ -93,8 +254,71 @@ function renderChapterSelect() {
 }
 
 // ---- Start Chapter ----
-function startChapter(index) {
+async function ensureEngine() {
+  if (engine) return engine;
+  if (!engineReadyPromise) {
+    engineReadyPromise = import('./core/GameEngine.js').then(({ GameEngine }) => {
+      const created = new GameEngine(gameCanvas);
+      created.setupDialogue({
+        box: $('dialogue-box'),
+        speaker: $('dialogue-speaker'),
+        text: $('dialogue-text'),
+        choices: $('dialogue-choices'),
+        portrait: $('portrait-canvas'),
+        skipHint: document.querySelector('.dialogue-skip-hint'),
+      });
+      created.setupMissionTracker({
+        panel: $('mission-panel'),
+        list: $('mission-list'),
+        progressFill: $('mission-progress-fill'),
+        progressText: $('mission-progress-text'),
+        toggle: $('mission-panel-toggle'),
+        compass: $('objective-compass'),
+        compassArrow: $('objective-compass-arrow'),
+        compassName: $('objective-compass-name'),
+        compassDistance: $('objective-compass-distance'),
+      });
+      created.setupCinematicIntro({
+        overlay: $('cinematic-intro'),
+        kicker: $('cinematic-kicker'),
+        number: $('cinematic-number'),
+        year: $('cinematic-year'),
+        title: $('cinematic-title'),
+        desc: $('cinematic-desc'),
+        progressFill: $('cinematic-progress-fill'),
+        skip: $('cinematic-skip'),
+      });
+      created.setupAudioControls({
+        toggle: $('audio-toggle'),
+      });
+      created.setupGraphicsControls({
+        toggle: $('graphics-quality-toggle'),
+      });
+      created.setupPerformanceHud({
+        badge: $('performance-badge'),
+        fps: $('performance-fps'),
+        quality: $('performance-quality'),
+        auto: $('performance-auto'),
+        recommendation: $('performance-recommendation'),
+        recommendationText: $('performance-recommendation-text'),
+        enableAuto: $('btn-enable-auto-quality'),
+        dismissRecommendation: $('btn-dismiss-performance-recommendation'),
+        adjustmentToast: $('quality-adjustment-toast'),
+        adjustmentText: $('quality-adjustment-text'),
+      });
+      setupMobileControls();
+      setupPauseMenu();
+      engine = created;
+      return engine;
+    });
+  }
+  return engineReadyPromise;
+}
+
+// ---- Start Chapter ----
+async function startChapter(index) {
   gameState.currentChapter = index;
+  showChapterLoading();
 
   // Hide all UI
   [mainMenu, chapterSelect, finalSummary, aboutScreen].forEach(el => el?.classList.add('hidden'));
@@ -104,53 +328,51 @@ function startChapter(index) {
   pauseMenu.classList.add('hidden');
 
   // Update HUD
-  const ch = CHAPTERS[index];
-  $('hud-chapter-num').textContent = `第${['一','二','三','四','五','六','七'][index]}章`;
+  const ch = getChapter(index);
+  $('hud-chapter-num').textContent = ch.number;
   $('hud-chapter-name').textContent = ch.title;
 
-  // Create engine if needed
-  let pe;
-  if (!engine) {
-    engine = new GameEngine(gameCanvas);
-    engine.setupDialogue({
-      box: $('dialogue-box'),
-      speaker: $('dialogue-speaker'),
-      text: $('dialogue-text'),
-      choices: $('dialogue-choices'),
-      portrait: $('portrait-canvas'),
-      skipHint: document.querySelector('.dialogue-skip-hint'),
-    });
-    setupMobileControls();
-    setupPauseMenu();
+  try {
+    const [
+      readyEngine,
+      { PlotEngine },
+      { plotData },
+      SceneClass,
+    ] = await Promise.all([
+      ensureEngine(),
+      import('./core/PlotEngine.js'),
+      import('./data/plotData.js'),
+      loadChapterSceneClass(index),
+    ]);
+
+    const pe = new PlotEngine(plotData, gameState);
+    readyEngine.setPlotEngine(pe, gameState);
+
+    pe.onChapterEnd = () => {
+      readyEngine.pause();
+      showChapterComplete(index);
+    };
+
+    const scene = new SceneClass();
+    readyEngine.loadChapterScene(scene);
+    readyEngine.start();
+    readyEngine.playChapterIntro(ch);
+
+    const startNodeId = `ch${index + 1}_start`;
+    if (plotData[startNodeId]) {
+      pe.start(startNodeId);
+    } else {
+      readyEngine.onChapterComplete = () => showChapterComplete(index);
+    }
+    hideChapterLoading();
+  } catch (error) {
+    console.error('Failed to load chapter', error);
+    hideChapterLoading();
+    gameCanvas.classList.add('hidden');
+    gameUI.classList.add('hidden');
+    chapterSelect.classList.remove('hidden');
+    renderChapterSelect();
   }
-
-  // Use dynamic import or static import for PlotEngine and plotData
-  // Since we use ES modules, we can import dynamically
-  import('./core/PlotEngine.js').then(({ PlotEngine }) => {
-    import('./data/plotData.js').then(({ plotData }) => {
-      pe = new PlotEngine(plotData, gameState);
-      engine.setPlotEngine(pe, gameState);
-      
-      pe.onChapterEnd = (nextChapterIndex) => {
-         engine.pause();
-         showChapterComplete(index);
-      };
-
-      const SceneClass = SCENE_CLASSES[index];
-      const scene = new SceneClass();
-      engine.loadChapterScene(scene);
-      engine.start();
-
-      // Start plot engine if this chapter has a start node
-      const startNodeId = `ch${index + 1}_start`;
-      if (plotData[startNodeId]) {
-         pe.start(startNodeId);
-      } else {
-         // Fallback legacy setup
-         engine.onChapterComplete = () => showChapterComplete(index);
-      }
-    });
-  });
 
   // Show mobile on touch device
   if ('ontouchstart' in window) {
@@ -162,18 +384,18 @@ function startChapter(index) {
 // ---- Chapter Complete ----
 function showChapterComplete(index) {
   engine.pause();
-  const ch = CHAPTERS[index];
+  const ch = getChapter(index);
   const isLast = index >= CHAPTERS.length - 1;
 
-  $('complete-chapter-name').textContent = `✅ ${ch.title} — 完成`;
+  $('complete-chapter-name').textContent = `✅ ${t('chapterComplete.title', { chapter: ch.title })}`;
   $('complete-summary').textContent = ch.desc;
 
   const choicesEl = $('complete-choices');
   const choices = gameState.getChoicesForChapter(index);
   choicesEl.innerHTML = choices.length
-    ? '<h4 style="color:var(--gold);font-family:var(--font-title);margin-bottom:0.5rem;">您的选择</h4>' +
-      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${c.choiceText}</span></div>`).join('')
-    : '<p style="color:var(--text-secondary);font-size:0.9rem;">本章暂无重要选择记录</p>';
+    ? `<h4 class="choice-record-title">${escapeHtml(t('chapterComplete.choicesTitle'))}</h4>` +
+      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${escapeHtml(c.choiceText)}</span></div>`).join('')
+    : `<p class="choice-record-empty">${escapeHtml(t('chapterComplete.noChoices'))}</p>`;
 
   const nextBtn = $('btn-next-chapter');
   const summaryBtn = $('btn-view-summary');
@@ -209,6 +431,10 @@ function showFinalSummary() {
 // ---- Pause Menu ----
 function setupPauseMenu() {
   window.addEventListener('keydown', e => {
+    if (e.code === 'Escape' && !settingsPanel.classList.contains('hidden')) {
+      closeSettingsPanel();
+      return;
+    }
     if (e.code === 'Escape' && engine) {
       if (engine.isPaused) { engine.resume(); pauseMenu.classList.add('hidden'); }
       else { engine.pause(); pauseMenu.classList.remove('hidden'); }
@@ -216,6 +442,9 @@ function setupPauseMenu() {
   });
   $('btn-resume')?.addEventListener('click', () => {
     engine.resume(); pauseMenu.classList.add('hidden');
+  });
+  $('btn-settings-pause')?.addEventListener('click', () => {
+    openSettingsPanel('pause');
   });
   $('btn-chapter-menu')?.addEventListener('click', () => {
     engine.stop(); pauseMenu.classList.add('hidden');
@@ -269,6 +498,30 @@ $('btn-about')?.addEventListener('click', () => {
   aboutScreen.classList.remove('hidden');
 });
 
+$('btn-settings-main')?.addEventListener('click', () => {
+  openSettingsPanel('main');
+});
+
+$('btn-close-settings')?.addEventListener('click', () => {
+  closeSettingsPanel();
+});
+
+$('settings-auto-quality')?.addEventListener('click', () => {
+  setAutoGraphicsFromSettings(!getAutoGraphicsEnabled());
+});
+
+$('settings-enhanced-subtitles')?.addEventListener('click', () => {
+  setEnhancedSubtitlesFromSettings(!getEnhancedSubtitlesEnabled());
+});
+
+$('settings-camera-sensitivity')?.addEventListener('input', event => {
+  setCameraSensitivityFromSettings(event.target.value);
+});
+
+settingsPanel?.addEventListener('click', event => {
+  if (event.target.classList.contains('settings-backdrop')) closeSettingsPanel();
+});
+
 $('btn-back-from-about')?.addEventListener('click', () => {
   aboutScreen.classList.add('hidden');
   mainMenu.classList.remove('hidden');
@@ -286,5 +539,13 @@ $('btn-restart')?.addEventListener('click', () => {
   $('btn-continue')?.classList.add('hidden');
 });
 
+document.querySelectorAll('[data-locale]').forEach(button => {
+  button.addEventListener('click', () => setLocale(button.dataset.locale));
+});
+
+onLocaleChange(refreshVisibleText);
+
 // ---- Boot ----
+applyAccessibilityPreferences();
+refreshVisibleText();
 simulateLoading();

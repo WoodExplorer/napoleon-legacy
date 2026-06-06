@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="description" content="拿破仑传奇 - 互动历史教育3D游戏" />
-  <title>拿破仑传奇 | Napoleon's Legacy</title>
+  <meta name="description" content="" />
+  <title></title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -12,32 +12,37 @@
     <div id="loading-screen">
       <div class="loading-content">
         <div class="loading-eagle">⚜</div>
-        <h1 class="loading-title">拿破仑传奇</h1>
-        <p class="loading-subtitle">Napoleon's Legacy</p>
+        <h1 class="loading-title" data-i18n="brand.title"></h1>
+        <p class="loading-subtitle" data-i18n="brand.subtitle"></p>
         <div class="loading-bar-wrapper"><div class="loading-bar" id="loading-bar"></div></div>
-        <p class="loading-text" id="loading-text">正在加载世界...</p>
+        <p class="loading-text" id="loading-text"></p>
       </div>
     </div>
 
     <div id="main-menu" class="hidden">
       <div class="menu-bg-overlay"></div>
       <div class="menu-content">
+        <div class="locale-switcher" role="group" aria-label="Language">
+          <button type="button" class="locale-btn" data-locale="en" data-i18n="language.english"></button>
+          <button type="button" class="locale-btn" data-locale="zh-CN" data-i18n="language.chinese"></button>
+        </div>
         <div class="menu-emblem">⚜</div>
-        <h1 class="menu-title">拿破仑传奇</h1>
-        <p class="menu-subtitle">Napoleon's Legacy · 1769–1821</p>
-        <p class="menu-quote">"不可能只是懦夫的借口，伟人从不使用这个词。"</p>
+        <h1 class="menu-title" data-i18n="brand.title"></h1>
+        <p class="menu-subtitle"><span data-i18n="brand.subtitle"></span> · <span data-i18n="brand.dates"></span></p>
+        <p class="menu-quote" data-i18n="brand.quote"></p>
         <div class="menu-buttons">
-          <button id="btn-new-game" class="menu-btn primary">开始新游戏</button>
-          <button id="btn-continue" class="menu-btn secondary hidden">继续游戏</button>
-          <button id="btn-about" class="menu-btn secondary">关于游戏</button>
+          <button id="btn-new-game" class="menu-btn primary" data-i18n="menu.newGame"></button>
+          <button id="btn-continue" class="menu-btn secondary hidden" data-i18n="menu.continue"></button>
+          <button id="btn-settings-main" class="menu-btn secondary" data-i18n="menu.settings"></button>
+          <button id="btn-about" class="menu-btn secondary" data-i18n="menu.about"></button>
         </div>
       </div>
     </div>
 
     <div id="chapter-select" class="hidden">
       <div class="chapter-header">
-        <button id="btn-back-menu" class="back-btn">← 返回</button>
-        <h2>选择章节</h2>
+        <button id="btn-back-menu" class="back-btn"><span aria-hidden="true">←</span> <span data-i18n="menu.back"></span></button>
+        <h2 data-i18n="menu.chapterSelect"></h2>
       </div>
       <div id="chapter-list" class="chapter-grid"></div>
     </div>
@@ -47,17 +52,90 @@
     <div id="game-ui" class="hidden">
       <div id="hud-top">
         <div class="hud-chapter-info">
-          <span id="hud-chapter-num">第一章</span>
-          <span id="hud-chapter-name">科西嘉岛的少年</span>
+          <span id="hud-chapter-num"></span>
+          <span id="hud-chapter-name"></span>
         </div>
         <div class="hud-controls-hint">
-          <span>↑↓←→ 移动</span><span>WASD 视角</span><span>E 互动</span><span>ESC 菜单</span>
+          <span data-i18n="hud.move"></span><span data-i18n="hud.camera"></span><span data-i18n="hud.interact"></span><span data-i18n="hud.menu"></span>
         </div>
+        <div class="hud-system-buttons">
+          <div id="performance-badge" class="performance-badge" data-status="unknown">
+            <span id="performance-fps">--</span>
+            <span class="performance-unit">FPS</span>
+            <span id="performance-quality">B</span>
+            <span id="performance-auto" class="performance-auto"></span>
+          </div>
+          <button id="graphics-quality-toggle" class="graphics-quality-toggle" type="button">◐</button>
+          <button id="audio-toggle" class="audio-toggle" type="button" aria-pressed="true">♫</button>
+        </div>
+      </div>
+
+      <aside id="mission-panel" class="hidden" aria-live="polite">
+        <div class="mission-header">
+          <span class="mission-kicker" data-i18n="mission.kicker"></span>
+          <div class="mission-header-actions">
+            <span id="mission-progress-text"></span>
+            <button
+              id="mission-panel-toggle"
+              class="mission-panel-toggle"
+              type="button"
+              aria-expanded="true"
+              data-i18n-aria-label="mission.collapse"
+              data-i18n-title="mission.collapse"
+            >▾</button>
+          </div>
+        </div>
+        <div class="mission-progress"><div id="mission-progress-fill"></div></div>
+        <ul id="mission-list"></ul>
+      </aside>
+
+      <div id="objective-compass" class="objective-compass hidden" role="status" aria-live="polite">
+        <div class="objective-compass-track" aria-hidden="true">
+          <span class="objective-compass-tick"></span>
+          <span id="objective-compass-arrow" class="objective-compass-arrow">▲</span>
+        </div>
+        <div class="objective-compass-copy">
+          <span id="objective-compass-name"></span>
+          <span id="objective-compass-distance"></span>
+        </div>
+      </div>
+
+      <div id="performance-recommendation" class="performance-recommendation hidden" role="status">
+        <span id="performance-recommendation-text" data-i18n="performance.recommendAutoQuality"></span>
+        <div class="performance-recommendation-actions">
+          <button id="btn-enable-auto-quality" class="performance-recommendation-btn primary" type="button" data-i18n="performance.enableAuto"></button>
+          <button
+            id="btn-dismiss-performance-recommendation"
+            class="performance-recommendation-btn"
+            type="button"
+            data-i18n-aria-label="performance.dismiss"
+            data-i18n-title="performance.dismiss"
+          >×</button>
+        </div>
+      </div>
+
+      <div id="quality-adjustment-toast" class="quality-adjustment-toast hidden" role="status">
+        <span id="quality-adjustment-text"></span>
+      </div>
+
+      <div id="cinematic-intro" class="hidden" aria-live="polite">
+        <div class="cinematic-vignette"></div>
+        <div class="cinematic-copy">
+          <div class="cinematic-kicker" id="cinematic-kicker"></div>
+          <div class="cinematic-title-row">
+            <span id="cinematic-number"></span>
+            <span id="cinematic-year"></span>
+          </div>
+          <h2 id="cinematic-title"></h2>
+          <p id="cinematic-desc"></p>
+          <div class="cinematic-progress"><div id="cinematic-progress-fill"></div></div>
+        </div>
+        <button id="cinematic-skip" type="button" data-i18n="cinematic.skip"></button>
       </div>
 
       <div id="interact-prompt" class="hidden">
         <div class="interact-icon">E</div>
-        <span id="interact-text">交谈</span>
+        <span id="interact-text"></span>
       </div>
 
       <div id="dialogue-box" class="hidden">
@@ -70,16 +148,17 @@
           <div class="dialogue-cursor">▼</div>
         </div>
         <div id="dialogue-choices" class="hidden"></div>
-        <div class="dialogue-skip-hint">点击继续</div>
+        <div class="dialogue-skip-hint" data-i18n="game.dialogueContinue"></div>
       </div>
 
       <div id="pause-menu" class="hidden">
         <div class="pause-overlay"></div>
         <div class="pause-content">
-          <h2>⚜ 暂停</h2>
-          <button id="btn-resume" class="menu-btn primary">继续游戏</button>
-          <button id="btn-chapter-menu" class="menu-btn secondary">章节选择</button>
-          <button id="btn-main-menu" class="menu-btn secondary">主菜单</button>
+          <h2>⚜ <span data-i18n="game.pause"></span></h2>
+          <button id="btn-resume" class="menu-btn primary" data-i18n="game.resume"></button>
+          <button id="btn-settings-pause" class="menu-btn secondary" data-i18n="menu.settings"></button>
+          <button id="btn-chapter-menu" class="menu-btn secondary" data-i18n="game.chapterMenu"></button>
+          <button id="btn-main-menu" class="menu-btn secondary" data-i18n="game.mainMenu"></button>
         </div>
       </div>
 
@@ -89,14 +168,14 @@
             <div class="joystick-ring"></div>
             <div class="joystick-thumb" id="move-thumb"></div>
           </div>
-          <div class="joystick-label">移动</div>
+          <div class="joystick-label" data-i18n="game.mobileMove"></div>
         </div>
         <div id="joystick-look" class="joystick-container right-joystick">
           <div class="joystick-base">
             <div class="joystick-ring"></div>
             <div class="joystick-thumb" id="look-thumb"></div>
           </div>
-          <div class="joystick-label">视角</div>
+          <div class="joystick-label" data-i18n="game.mobileLook"></div>
         </div>
         <button id="mobile-interact" class="mobile-btn interact-btn hidden">E</button>
       </div>
@@ -104,11 +183,50 @@
       <div id="chapter-complete" class="hidden">
         <div class="chapter-complete-content">
           <div class="complete-emblem">⚜</div>
-          <h2 id="complete-chapter-name">章节完成</h2>
+          <h2 id="complete-chapter-name"></h2>
           <p id="complete-summary"></p>
           <div class="choice-record" id="complete-choices"></div>
-          <button id="btn-next-chapter" class="menu-btn primary">下一章节</button>
-          <button id="btn-view-summary" class="menu-btn secondary hidden">查看总结</button>
+          <button id="btn-next-chapter" class="menu-btn primary" data-i18n="chapterComplete.nextChapter"></button>
+          <button id="btn-view-summary" class="menu-btn secondary hidden" data-i18n="chapterComplete.viewSummary"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="settings-backdrop"></div>
+      <div class="settings-content">
+        <button
+          id="btn-close-settings"
+          class="settings-close"
+          type="button"
+          data-i18n-aria-label="settings.close"
+          data-i18n-title="settings.close"
+        >×</button>
+        <h2 id="settings-title" data-i18n="settings.title"></h2>
+        <div class="settings-row">
+          <div class="settings-label" data-i18n="settings.graphicsQuality"></div>
+          <div id="settings-graphics-options" class="settings-segment" role="group"></div>
+        </div>
+        <div class="settings-row settings-toggle-row">
+          <div class="settings-label" data-i18n="settings.autoQuality"></div>
+          <button id="settings-auto-quality" class="settings-switch" type="button" aria-pressed="false">
+            <span class="settings-switch-track"><span class="settings-switch-thumb"></span></span>
+            <span class="settings-switch-state" data-i18n="settings.off"></span>
+          </button>
+        </div>
+        <div class="settings-row settings-range-row">
+          <div class="settings-label" data-i18n="settings.cameraSensitivity"></div>
+          <div class="settings-range-control">
+            <input id="settings-camera-sensitivity" class="settings-range" type="range" min="0.5" max="1.5" step="0.1" />
+            <span id="settings-camera-sensitivity-value" class="settings-range-value">100%</span>
+          </div>
+        </div>
+        <div class="settings-row settings-toggle-row">
+          <div class="settings-label" data-i18n="settings.enhancedSubtitles"></div>
+          <button id="settings-enhanced-subtitles" class="settings-switch" type="button" aria-pressed="false">
+            <span class="settings-switch-track"><span class="settings-switch-thumb"></span></span>
+            <span class="settings-switch-state" data-i18n="settings.off"></span>
+          </button>
         </div>
       </div>
     </div>
@@ -117,26 +235,26 @@
       <div class="summary-content">
         <div class="summary-header">
           <div class="summary-emblem">⚜</div>
-          <h1>拿破仑的传奇落幕</h1>
-          <p class="summary-dates">1769 — 1821</p>
+          <h1 data-i18n="summary.title"></h1>
+          <p class="summary-dates" data-i18n="brand.dates"></p>
         </div>
         <div class="summary-scores" id="summary-scores"></div>
         <div class="summary-timeline" id="summary-timeline"></div>
         <div class="summary-ending" id="summary-ending"></div>
         <div class="summary-actions">
-          <button id="btn-restart" class="menu-btn primary">重新开始</button>
+          <button id="btn-restart" class="menu-btn primary" data-i18n="summary.restart"></button>
         </div>
       </div>
     </div>
 
     <div id="about-screen" class="hidden">
       <div class="about-content">
-        <button class="back-btn" id="btn-back-from-about">← 返回</button>
-        <h2>关于《拿破仑传奇》</h2>
-        <p>这是一款基于真实历史的互动教育游戏，玩家扮演拿破仑·波拿巴，经历他从科西嘉少年到法国皇帝的传奇一生。</p>
-        <h3>操作说明</h3>
-        <p>键盘：方向键移动，WASD调整视角，E互动，ESC暂停</p>
-        <p>手机：左摇杆移动，右摇杆视角</p>
+        <button class="back-btn" id="btn-back-from-about"><span aria-hidden="true">←</span> <span data-i18n="menu.back"></span></button>
+        <h2 data-i18n="about.title"></h2>
+        <p data-i18n="about.body"></p>
+        <h3 data-i18n="about.controlsTitle"></h3>
+        <p data-i18n="about.keyboard"></p>
+        <p data-i18n="about.mobile"></p>
       </div>
     </div>
   </div>

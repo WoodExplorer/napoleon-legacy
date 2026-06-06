@@ -7,11 +7,19 @@ export class Chapter2Scene {
   constructor() {
     this.id = 'chapter2';
     this.index = 1;
-    this.title = '土伦之战';
-    this.year = '1793年';
     this.npcs = [];
     this.scene = null;
     this.barrels = [];
+    this.worldBounds = { minX: -18, maxX: 18, minZ: -18, maxZ: 14 };
+    this.collisionObjects = [
+      { type: 'box', x: 8, z: -5, width: 6.8, depth: 4.8 },
+      { type: 'box', x: 8, z: -3, width: 7.5, depth: 0.9 },
+      { type: 'box', x: 0, z: -2, width: 5.4, depth: 0.9 },
+      { type: 'circle', x: -2, z: 0, radius: 0.45 },
+      { type: 'circle', x: 0, z: 0, radius: 0.45 },
+      { type: 'circle', x: 2, z: 0, radius: 0.45 },
+      { type: 'box', x: 0, z: -20, width: 30, depth: 5 },
+    ];
   }
 
   build(scene) {
@@ -22,6 +30,8 @@ export class Chapter2Scene {
 
     const ground = SceneBuilder.createGround(0x8b7355, 50);
     scene.add(ground);
+    SceneBuilder.createPath(scene, [[-6, 1.5], [-1, -0.5], [4, -3], [8, -5]], 1.4, 0x7d684e);
+    SceneBuilder.createAtmosphere(scene, { count: 170, spread: 42, height: 7, color: 0xd0b08a, size: 0.12, speed: 0.08, opacity: 0.28 });
     this._buildFortress(scene);
 
     this.player = buildNapoleonCharacter();
@@ -33,13 +43,13 @@ export class Chapter2Scene {
     general.position.set(4, 0, -3);
     general.rotation.y = -Math.PI / 3;
     scene.add(general);
-    this.npcs.push({ mesh: general, name: '卡尔托将军', animator: new CharacterAnimator(general), dialogueId: 'general', interactDist: 2.5 });
+    this.npcs.push({ mesh: general, nameKey: 'characters.carteaux', animator: new CharacterAnimator(general), dialogueId: 'general', objectiveFlag: 'ch2_talked_gen', interactDist: 2.5 });
 
     const officer = buildNPCCharacter({ clothColor: 0x2a4a6a, pantColor: 0x1a2a3a, name: 'junot' });
     officer.position.set(-3, 0, 2);
     officer.rotation.y = Math.PI / 4;
     scene.add(officer);
-    this.npcs.push({ mesh: officer, name: '朱诺上尉', animator: new CharacterAnimator(officer), dialogueId: 'junot', interactDist: 2.5 });
+    this.npcs.push({ mesh: officer, nameKey: 'characters.junot', animator: new CharacterAnimator(officer), dialogueId: 'junot', objectiveFlag: 'ch2_talked_junot', interactDist: 2.5 });
 
     return this.player;
   }
@@ -88,44 +98,16 @@ export class Chapter2Scene {
     }
 
     // 远处港口水面
-    const waterGeo = new THREE.PlaneGeometry(30, 15);
-    const waterMat = new THREE.MeshStandardMaterial({ color: 0x1a4a6a, roughness: 0.3, metalness: 0.4 });
-    const water = new THREE.Mesh(waterGeo, waterMat);
-    water.rotation.x = -Math.PI / 2;
+    const water = SceneBuilder.createAnimatedWater(30, 15, 0x1a4a6a);
     water.position.set(0, 0.02, -20);
     scene.add(water);
-  }
 
-  getDialogue(dialogueId) {
-    const dialogues = {
-      general: [
-        { id: 'start', speaker: '卡尔托将军', text: '波拿巴上尉，你提出的炮兵方案太过冒进！我们没有足够的火炮。', portraitColor: '#3a5a3a' },
-        { id: 'q1', speaker: '拿破仑', text: '将军，土伦港的关键在于穆格雷特高地。占领那里，英国舰队就必须撤退！', portraitColor: '#1a3a5c',
-          choices: [
-            { text: '请求将军全力支持，集中所有火炮强攻高地', impact: { strategy: 12, legacy: 8 }, next: 'a1_force' },
-            { text: '提出迂回战术，避免正面强攻减少伤亡', impact: { strategy: 8, humanity: 10 }, next: 'a1_flank' },
-            { text: '绕过将军，直接向督政府申请更多资源', impact: { diplomacy: 10, strategy: 6 }, next: 'a1_report' },
-          ]
-        },
-        { id: 'a1_force', speaker: '卡尔托将军', text: '好吧，我批准你的计划。但如果失败，后果自负！准备进攻，波拿巴。', portraitColor: '#3a5a3a' },
-        { id: 'a1_flank', speaker: '卡尔托将军', text: '迂回？需要时间，但减少伤亡是值得的。你比我想象的更沉稳，上尉。', portraitColor: '#3a5a3a' },
-        { id: 'a1_report', speaker: '卡尔托将军', text: '你敢越级汇报！...但不得不说，你确实懂得如何运用政治手段。', portraitColor: '#3a5a3a' },
-      ],
-      junot: [
-        { id: 'start', speaker: '朱诺上尉', text: '拿破仑，弟兄们都在说你的炮兵计划，大家愿意跟你冲！', portraitColor: '#2a4a6a' },
-        { id: 'q1', speaker: '拿破仑', text: '朱诺，明天的战斗会很危险。你和弟兄们准备好了吗？', portraitColor: '#1a3a5c',
-          choices: [
-            { text: '激励士气：告诉他们此战将名垂青史', impact: { loyalty: 12, legacy: 6 }, next: 'b1_inspire' },
-            { text: '务实准备：详细部署各队战术分工', impact: { strategy: 10, loyalty: 8 }, next: 'b1_plan' },
-            { text: '承诺战后奖赏，提高士兵积极性', impact: { loyalty: 8, diplomacy: 6 }, next: 'b1_reward' },
-          ]
-        },
-        { id: 'b1_inspire', speaker: '朱诺上尉', text: '将军的话让我热血沸腾！弟兄们会为你赴死的，拿破仑！', portraitColor: '#2a4a6a' },
-        { id: 'b1_plan', speaker: '朱诺上尉', text: '明白！清晰的部署让弟兄们心里有底。我们会按计划执行。', portraitColor: '#2a4a6a' },
-        { id: 'b1_reward', speaker: '朱诺上尉', text: '哈！物质激励也很重要。弟兄们会更有干劲的，放心吧！', portraitColor: '#2a4a6a' },
-      ],
-    };
-    return dialogues[dialogueId] || [];
+    [-2.8, 2.8].forEach(x => {
+      const banner = SceneBuilder.createBanner(0x1a3a9a);
+      banner.position.set(x, 0, -1.8);
+      banner.rotation.y = x > 0 ? -0.3 : 0.3;
+      scene.add(banner);
+    });
   }
 
   update(delta) {
