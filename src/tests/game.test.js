@@ -5,7 +5,7 @@ import {
   getFootstepInterval,
   MASTER_VOLUME,
 } from '../core/AudioDirector.js';
-import { AutoQualityController } from '../core/AutoQuality.js';
+import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
 import {
   createIntroState,
   easeInOutCubic,
@@ -577,6 +577,28 @@ test('auto quality relaxes pressure on healthy frame reports', () => {
   assertEqual(controller.record({ status: 'strained', fps: 34 }, 'cinematic'), null);
   assertEqual(controller.record({ status: 'stable', fps: 60 }, 'cinematic'), null);
   assertEqual(controller.record({ status: 'strained', fps: 34 }, 'cinematic'), null);
+});
+
+test('quality recommendation appears only when manual quality is under pressure', () => {
+  const controller = new QualityRecommendationController({ pressureReports: 2, cooldownReports: 1 });
+  const pressure = { status: 'strained', fps: 34 };
+  assertEqual(controller.record(pressure, { autoEnabled: true, currentQuality: 'cinematic' }), null);
+  assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'low' }), null);
+  assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'cinematic' }), null);
+  const recommendation = controller.record(pressure, { autoEnabled: false, currentQuality: 'cinematic' });
+  assertEqual(recommendation.quality, 'cinematic');
+  assertEqual(recommendation.status, 'strained');
+});
+
+test('quality recommendation cooldown prevents repeated prompts', () => {
+  const controller = new QualityRecommendationController({ pressureReports: 1, cooldownReports: 2 });
+  const pressure = { status: 'critical', fps: 24 };
+  assert(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }));
+  assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }), null);
+  assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }), null);
+  assert(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }));
+  controller.dismiss();
+  assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }), null);
 });
 
 console.log('\nPerformanceMonitor');

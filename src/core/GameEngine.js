@@ -11,7 +11,7 @@ import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
 import { AudioDirector } from './AudioDirector.js';
-import { AutoQualityController } from './AutoQuality.js';
+import { AutoQualityController, QualityRecommendationController } from './AutoQuality.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import {
   getGraphicsPreset,
@@ -74,6 +74,7 @@ export class GameEngine {
     this.performanceUI = null;
     this.performance = new FrameRateSampler();
     this.autoQuality = new AutoQualityController();
+    this.qualityRecommendation = new QualityRecommendationController();
     this.autoGraphicsEnabled = loadAutoGraphicsEnabled();
     this.graphicsQuality = loadGraphicsQuality();
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
@@ -228,6 +229,16 @@ export class GameEngine {
 
   setupPerformanceHud(uiElements) {
     this.performanceUI = uiElements;
+    uiElements.enableAuto?.addEventListener('click', () => {
+      this.audio.playUi();
+      this.setAutoGraphicsEnabled(true, { persist: true });
+      this._hideQualityRecommendation();
+    });
+    uiElements.dismissRecommendation?.addEventListener('click', () => {
+      this.audio.playUi();
+      this.qualityRecommendation.dismiss();
+      this._hideQualityRecommendation();
+    });
     this._syncPerformanceHud(this.performance.getSnapshot());
   }
 
@@ -246,6 +257,8 @@ export class GameEngine {
   setAutoGraphicsEnabled(enabled, options = {}) {
     this.autoGraphicsEnabled = options.persist ? saveAutoGraphicsEnabled(enabled) : Boolean(enabled);
     this.autoQuality.reset();
+    this.qualityRecommendation.reset();
+    if (this.autoGraphicsEnabled) this._hideQualityRecommendation();
     this._syncPerformanceHud(this.performance.getSnapshot());
     return this.autoGraphicsEnabled;
   }
@@ -377,6 +390,7 @@ export class GameEngine {
     const performanceSnapshot = this.performance.record(delta);
     if (performanceSnapshot) {
       this._applyAutoGraphics(performanceSnapshot);
+      this._evaluateQualityRecommendation(performanceSnapshot);
       this._syncPerformanceHud(performanceSnapshot);
     }
 
@@ -590,6 +604,28 @@ export class GameEngine {
     const action = this.autoQuality.record(snapshot, this.graphicsQuality);
     if (!action) return;
     this.setGraphicsQuality(action.to, { persist: true, source: 'auto' });
+  }
+
+  _evaluateQualityRecommendation(snapshot) {
+    if (this.isPaused || !this.currentChapterScene) return;
+    const recommendation = this.qualityRecommendation.record(snapshot, {
+      autoEnabled: this.autoGraphicsEnabled,
+      currentQuality: this.graphicsQuality,
+    });
+    if (recommendation) this._showQualityRecommendation(recommendation);
+  }
+
+  _showQualityRecommendation(recommendation) {
+    if (!this.performanceUI?.recommendation) return;
+    this.performanceUI.recommendation.classList.remove('hidden');
+    this.performanceUI.recommendation.dataset.status = recommendation.status;
+    if (this.performanceUI.recommendationText) {
+      this.performanceUI.recommendationText.textContent = t('performance.recommendAutoQuality');
+    }
+  }
+
+  _hideQualityRecommendation() {
+    this.performanceUI?.recommendation?.classList.add('hidden');
   }
 
   _attachObjectiveMarkers() {
