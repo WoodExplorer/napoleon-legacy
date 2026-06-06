@@ -34,6 +34,9 @@ export function buildMissionState(chapterScene, gameState, translate = key => ke
       done,
       distance,
       distanceLabel: formatDistance(distance),
+      position: npc.mesh?.position
+        ? { x: npc.mesh.position.x, z: npc.mesh.position.z }
+        : null,
     };
   });
 

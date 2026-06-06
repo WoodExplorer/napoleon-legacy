@@ -62,6 +62,14 @@ import { plotData } from '../data/plotData.js';
 import { getSceneRegistryMetadata, loadChapterSceneClass } from '../scenes/SceneRegistry.js';
 import { CHAPTERS } from '../ui/ChapterData.js';
 import {
+  buildObjectiveCompassState,
+  classifyCompassSide,
+  getActiveCompassObjective,
+  getCameraHeading,
+  getObjectiveHeading,
+  normalizeAngleRadians,
+} from '../ui/ObjectiveCompass.js';
+import {
   DEFAULT_LOCALE,
   getTranslationKeys,
   hasTranslationKey,
@@ -402,7 +410,82 @@ test('builds mission progress from NPC flags and player distance', () => {
   assertEqual(mission.total, 2);
   assertEqual(mission.objectives[0].done, true);
   assertEqual(mission.objectives[0].distanceLabel, '5m');
+  assertClose(mission.objectives[0].position.x, 3);
+  assertClose(mission.objectives[0].position.z, 4);
   assertEqual(mission.objectives[1].done, false);
+});
+
+console.log('\nObjectiveCompass');
+test('normalizes compass angles into a signed half turn', () => {
+  assertClose(normalizeAngleRadians(Math.PI * 3), -Math.PI);
+  assertClose(normalizeAngleRadians(-Math.PI * 1.5), Math.PI / 2);
+});
+
+test('derives camera and objective headings on the XZ plane', () => {
+  assertClose(getCameraHeading({
+    position: { x: 0, z: 0 },
+    lookAt: { x: 0, z: 1 },
+  }), 0);
+  assertClose(getCameraHeading({
+    position: { x: 0, z: 0 },
+    lookAt: { x: 1, z: 0 },
+  }), Math.PI / 2);
+  assertClose(getObjectiveHeading({ x: 0, z: 0 }, { x: -1, z: 0 }), -Math.PI / 2);
+});
+
+test('classifies objective direction around the compass', () => {
+  assertEqual(classifyCompassSide(0), 'ahead');
+  assertEqual(classifyCompassSide(-Math.PI / 2), 'left');
+  assertEqual(classifyCompassSide(Math.PI / 2), 'right');
+  assertEqual(classifyCompassSide(Math.PI), 'behind');
+});
+
+test('selects nearest incomplete objective for the compass', () => {
+  const objective = getActiveCompassObjective({
+    objectives: [
+      { id: 'done', done: true, distance: 1, position: { x: 0, z: 1 } },
+      { id: 'far', done: false, distance: 8, position: { x: 0, z: 8 } },
+      { id: 'near', done: false, distance: 3, position: { x: 0, z: 3 } },
+    ],
+  });
+  assertEqual(objective.id, 'near');
+});
+
+test('builds visible compass state with offset, rotation, name, and distance', () => {
+  const state = buildObjectiveCompassState(
+    {
+      objectives: [
+        {
+          id: 'mentor',
+          name: 'Pasquale Paoli',
+          done: false,
+          distance: 5,
+          distanceLabel: '5m',
+          position: { x: 5, z: 0 },
+        },
+      ],
+    },
+    { x: 0, z: 0 },
+    {
+      position: { x: 0, z: -4 },
+      lookAt: { x: 0, z: 0 },
+    },
+    { maxOffset: 100 }
+  );
+  assertEqual(state.visible, true);
+  assertEqual(state.objectiveId, 'mentor');
+  assertEqual(state.name, 'Pasquale Paoli');
+  assertEqual(state.distanceLabel, '5m');
+  assertEqual(state.side, 'right');
+  assertEqual(state.offsetPx, 50);
+  assertEqual(state.arrowRotationDeg, 90);
+});
+
+test('hides compass when no incomplete positioned objective exists', () => {
+  assertEqual(buildObjectiveCompassState({ objectives: [] }, { x: 0, z: 0 }, null).visible, false);
+  assertEqual(buildObjectiveCompassState({
+    objectives: [{ id: 'done', done: true, position: { x: 0, z: 1 } }],
+  }, { x: 0, z: 0 }, null).visible, false);
 });
 
 console.log('\nMovementPhysics');

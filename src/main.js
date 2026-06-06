@@ -272,6 +272,10 @@ async function ensureEngine() {
         list: $('mission-list'),
         progressFill: $('mission-progress-fill'),
         progressText: $('mission-progress-text'),
+        compass: $('objective-compass'),
+        compassArrow: $('objective-compass-arrow'),
+        compassName: $('objective-compass-name'),
+        compassDistance: $('objective-compass-distance'),
       });
       created.setupCinematicIntro({
         overlay: $('cinematic-intro'),

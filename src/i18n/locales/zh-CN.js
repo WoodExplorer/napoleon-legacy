@@ -42,6 +42,7 @@ export const zhCN = {
   mission: {
     kicker: '战役命令',
     progress: '已完成 {complete}/{total}',
+    compassLabel: '目标：{name}，{distance}',
   },
   cinematic: {
     kicker: '历史剧场',
