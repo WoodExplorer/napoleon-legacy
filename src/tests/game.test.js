@@ -13,6 +13,15 @@ import {
   INTRO_CAMERA_DEFAULTS,
 } from '../core/CinematicDirector.js';
 import {
+  DEFAULT_GRAPHICS_QUALITY,
+  GRAPHICS_STORAGE_KEY,
+  getGraphicsPreset,
+  getNextGraphicsQuality,
+  loadGraphicsQuality,
+  normalizeGraphicsQuality,
+  saveGraphicsQuality,
+} from '../core/GraphicsSettings.js';
+import {
   clampToBounds,
   resolveBoxCollision,
   resolveCircleCollision,
@@ -474,6 +483,37 @@ test('intro overlay stays visible before fading out near the end', () => {
   const complete = getIntroOverlayState(1);
   assertEqual(complete.visible, false);
   assertClose(complete.opacity, 0);
+});
+
+console.log('\nGraphicsSettings');
+test('normalizes unknown graphics quality to the balanced preset', () => {
+  assertEqual(normalizeGraphicsQuality('cinematic'), 'cinematic');
+  assertEqual(normalizeGraphicsQuality('ultra'), DEFAULT_GRAPHICS_QUALITY);
+  assertEqual(getGraphicsPreset('ultra').id, DEFAULT_GRAPHICS_QUALITY);
+});
+
+test('cycles graphics quality through low, balanced, and cinematic', () => {
+  assertEqual(getNextGraphicsQuality('low'), 'balanced');
+  assertEqual(getNextGraphicsQuality('balanced'), 'cinematic');
+  assertEqual(getNextGraphicsQuality('cinematic'), 'low');
+});
+
+test('persists graphics quality while tolerating broken storage', () => {
+  const storage = {
+    value: null,
+    getItem(key) { return key === GRAPHICS_STORAGE_KEY ? this.value : null; },
+    setItem(key, value) { if (key === GRAPHICS_STORAGE_KEY) this.value = value; },
+  };
+  assertEqual(saveGraphicsQuality('cinematic', storage), 'cinematic');
+  assertEqual(loadGraphicsQuality(storage), 'cinematic');
+  assertEqual(saveGraphicsQuality('unknown', storage), DEFAULT_GRAPHICS_QUALITY);
+
+  const brokenStorage = {
+    getItem() { throw new Error('blocked'); },
+    setItem() { throw new Error('blocked'); },
+  };
+  assertEqual(loadGraphicsQuality(brokenStorage), DEFAULT_GRAPHICS_QUALITY);
+  assertEqual(saveGraphicsQuality('low', brokenStorage), 'low');
 });
 
 console.log('\nAudioDirector');

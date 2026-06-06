@@ -53,6 +53,7 @@ function refreshVisibleText() {
     const ch = getChapter(gameState.currentChapter);
     $('hud-chapter-num').textContent = ch.number;
     $('hud-chapter-name').textContent = ch.title;
+    engine?.refreshHudControls();
   }
 }
 
@@ -159,6 +160,9 @@ async function ensureEngine() {
       });
       created.setupAudioControls({
         toggle: $('audio-toggle'),
+      });
+      created.setupGraphicsControls({
+        toggle: $('graphics-quality-toggle'),
       });
       setupMobileControls();
       setupPauseMenu();

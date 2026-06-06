@@ -50,6 +50,12 @@ export const en = {
     mute: 'Mute sound',
     enable: 'Enable sound',
   },
+  graphics: {
+    qualityLabel: 'Graphics: {quality}',
+    low: 'Low',
+    balanced: 'Balanced',
+    cinematic: 'Cinematic',
+  },
   game: {
     interactPrompt: 'Talk to {name}',
     dialogueContinue: 'Click to continue',
