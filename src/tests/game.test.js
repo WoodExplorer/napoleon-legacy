@@ -7,6 +7,7 @@ import {
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
 import {
+  CAMERA_RIG_DEFAULTS,
   clampCameraDistance,
   computeCameraRigTarget,
   getSmoothingFactor,
@@ -841,6 +842,16 @@ test('camera rig computes a stable third-person pose behind the player', () => {
   assertClose(target.lookAt.y, 1.25);
   assertEqual(target.fov, 65);
   assertEqual(target.obstructed, false);
+});
+
+test('camera rig allows exploration pitch to look upward', () => {
+  const target = computeCameraRigTarget({
+    playerPosition: { x: 0, y: 0, z: 0 },
+    pitch: CAMERA_RIG_DEFAULTS.maxPitch,
+    distance: 4,
+    obstacles: [],
+  });
+  assert(target.position.y < target.lookAt.y, 'Camera should dip below the look target for upward viewing');
 });
 
 test('camera rig shortens distance when scene geometry blocks the chase camera', () => {

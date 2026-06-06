@@ -38,6 +38,8 @@ const INTERACT_AWARENESS_DIST = 6.5;
 const INTERACT_READY_ASSIST_DIST = 0.4;
 const CAM_DIST_DEFAULT = 3.8;
 const CAM_PITCH_DEFAULT = -0.18;
+const CAM_PITCH_MIN = -0.82;
+const CAM_PITCH_MAX = 0.58;
 const NPC_COLLISION_RADIUS = 0.62;
 
 function escapeHtml(value) {
@@ -78,6 +80,7 @@ export class GameEngine {
     this.cameraRigTarget = null;
     this.pointerLook = null;
     this.missionUI = null;
+    this.missionCollapsed = false;
     this.currentMissionState = null;
     this.cinematicUI = null;
     this.audioUI = null;
@@ -185,7 +188,10 @@ export class GameEngine {
       const dy = e.clientY - this.pointerLook.y;
       this.pointerLook = { x: e.clientX, y: e.clientY };
       this.camYaw += dx * 0.0045 * this.cameraSensitivity;
-      this.camPitch = Math.max(-0.78, Math.min(0.18, this.camPitch + dy * 0.0025 * this.cameraSensitivity));
+      this.camPitch = Math.max(
+        CAM_PITCH_MIN,
+        Math.min(CAM_PITCH_MAX, this.camPitch + dy * 0.0025 * this.cameraSensitivity)
+      );
       this._updateCameraTarget();
     });
     const clearPointer = () => { this.pointerLook = null; };
@@ -213,6 +219,11 @@ export class GameEngine {
 
   setupMissionTracker(uiElements) {
     this.missionUI = uiElements;
+    uiElements.toggle?.addEventListener('click', () => {
+      this.audio.playUi();
+      this.setMissionPanelCollapsed(!this.missionCollapsed);
+    });
+    this._syncMissionPanelMode();
     this._updateMissionTracker(true);
   }
 
@@ -293,6 +304,13 @@ export class GameEngine {
     this._syncAudioControls();
     this._syncGraphicsControls();
     this._syncPerformanceHud(this.performance.getSnapshot());
+    this._syncMissionPanelMode();
+  }
+
+  setMissionPanelCollapsed(collapsed) {
+    this.missionCollapsed = Boolean(collapsed);
+    this._syncMissionPanelMode();
+    return this.missionCollapsed;
   }
 
   setPlotEngine(pe, gameState) {
@@ -558,7 +576,10 @@ export class GameEngine {
     // Mobile look
     if (this.input.lookVector) {
       this.camYaw += this.input.lookVector.x * speed * delta * 2;
-      this.camPitch = Math.max(-0.8, Math.min(0, this.camPitch - this.input.lookVector.y * speed * delta));
+      this.camPitch = Math.max(
+        CAM_PITCH_MIN,
+        Math.min(CAM_PITCH_MAX, this.camPitch - this.input.lookVector.y * speed * delta)
+      );
     }
     this._updateCameraTarget();
   }
@@ -679,12 +700,30 @@ export class GameEngine {
     if (!this.performanceUI?.badge || !snapshot) return;
     const preset = this.graphicsPreset;
     const fpsLabel = snapshot.fpsLabel ?? '--';
+    const label = t('performance.badgeLabel', {
+      fps: fpsLabel,
+      quality: t(preset.labelKey),
+    });
     this.performanceUI.badge.dataset.status = snapshot.status;
     this.performanceUI.badge.dataset.auto = String(this.autoGraphicsEnabled);
-    this.performanceUI.badge.setAttribute('title', `${fpsLabel} FPS · ${t(preset.labelKey)}`);
+    this.performanceUI.badge.setAttribute('title', label);
+    this.performanceUI.badge.setAttribute('aria-label', label);
     if (this.performanceUI.fps) this.performanceUI.fps.textContent = fpsLabel;
     if (this.performanceUI.quality) this.performanceUI.quality.textContent = preset.shortLabel;
     if (this.performanceUI.auto) this.performanceUI.auto.textContent = this.autoGraphicsEnabled ? 'A' : '';
+  }
+
+  _syncMissionPanelMode() {
+    const ui = this.missionUI;
+    if (!ui?.panel) return;
+    ui.panel.classList.toggle('collapsed', this.missionCollapsed);
+    ui.list?.setAttribute('aria-hidden', String(this.missionCollapsed));
+    if (!ui.toggle) return;
+    const label = t(this.missionCollapsed ? 'mission.expand' : 'mission.collapse');
+    ui.toggle.textContent = this.missionCollapsed ? '▸' : '▾';
+    ui.toggle.setAttribute('aria-label', label);
+    ui.toggle.setAttribute('title', label);
+    ui.toggle.setAttribute('aria-expanded', String(!this.missionCollapsed));
   }
 
   _applyAutoGraphics(snapshot) {
@@ -838,6 +877,7 @@ export class GameEngine {
       return;
     }
     panel.classList.remove('hidden');
+    this._syncMissionPanelMode();
     if (progressFill) progressFill.style.width = `${Math.round(missionState.progress * 100)}%`;
     if (progressText) {
       progressText.textContent = t('mission.progress', {

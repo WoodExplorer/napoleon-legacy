@@ -73,7 +73,17 @@
       <aside id="mission-panel" class="hidden" aria-live="polite">
         <div class="mission-header">
           <span class="mission-kicker" data-i18n="mission.kicker"></span>
-          <span id="mission-progress-text"></span>
+          <div class="mission-header-actions">
+            <span id="mission-progress-text"></span>
+            <button
+              id="mission-panel-toggle"
+              class="mission-panel-toggle"
+              type="button"
+              aria-expanded="true"
+              data-i18n-aria-label="mission.collapse"
+              data-i18n-title="mission.collapse"
+            >▾</button>
+          </div>
         </div>
         <div class="mission-progress"><div id="mission-progress-fill"></div></div>
         <ul id="mission-list"></ul>
