@@ -12,6 +12,7 @@
 - **可探索世界规则**: 每个章节都配置了场景边界、主要建筑/地形/NPC 碰撞体，玩家探索时不会再穿过布景或走出战场。
 - **电影化渲染管线**: 通过 Three.js 后处理合成器和 Bloom 通道增强高光、火光、旗帜与任务信标的视觉反馈。
 - **章节电影化入场**: 章节开始时播放建立镜头、标题层和进度线，再平滑切回可操作第三人称视角。
+- **程序化声音导演**: 使用 Web Audio 生成章节环境声、UI 反馈、脚步节奏和场景事件冲击音，并支持游戏内静音切换。
 - **按需加载架构**: 主菜单首包保持轻量，进入章节时才加载 Three.js 游戏引擎、剧情数据和当前章节场景。
 - **更顺手的视角控制**: 支持键盘、鼠标拖拽和滚轮缩放来观察场景。
 - **纯原生支持**: 核心逻辑和测试框架均使用原生 JavaScript 构建，极致轻量。
@@ -20,7 +21,7 @@
 
 ```text
 src/
-├── core/         # 核心引擎 (GameEngine 3D驱动, PlotEngine 剧情引擎, GameState 状态管理, MovementPhysics 导航约束, CinematicDirector 镜头曲线)
+├── core/         # 核心引擎 (GameEngine 3D驱动, PlotEngine 剧情引擎, GameState 状态管理, MovementPhysics 导航约束, CinematicDirector 镜头曲线, AudioDirector 声音反馈)
 ├── data/         # 数据配置 (plotData.js 存放剧本节点的图数据)
 ├── i18n/         # 多语言资源与翻译工具
 ├── scenes/       # 3D 场景 (SceneRegistry 按需加载章节场景, 各章节负责场景搭建和事件回调)

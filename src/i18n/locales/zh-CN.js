@@ -46,6 +46,10 @@ export const zhCN = {
     kicker: '历史剧场',
     skip: '跳过',
   },
+  audio: {
+    mute: '静音',
+    enable: '开启声音',
+  },
   game: {
     interactPrompt: '与 {name} 交谈',
     dialogueContinue: '点击继续',
