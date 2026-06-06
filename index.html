@@ -33,6 +33,7 @@
         <div class="menu-buttons">
           <button id="btn-new-game" class="menu-btn primary" data-i18n="menu.newGame"></button>
           <button id="btn-continue" class="menu-btn secondary hidden" data-i18n="menu.continue"></button>
+          <button id="btn-settings-main" class="menu-btn secondary" data-i18n="menu.settings"></button>
           <button id="btn-about" class="menu-btn secondary" data-i18n="menu.about"></button>
         </div>
       </div>
@@ -110,6 +111,7 @@
         <div class="pause-content">
           <h2>⚜ <span data-i18n="game.pause"></span></h2>
           <button id="btn-resume" class="menu-btn primary" data-i18n="game.resume"></button>
+          <button id="btn-settings-pause" class="menu-btn secondary" data-i18n="menu.settings"></button>
           <button id="btn-chapter-menu" class="menu-btn secondary" data-i18n="game.chapterMenu"></button>
           <button id="btn-main-menu" class="menu-btn secondary" data-i18n="game.mainMenu"></button>
         </div>
@@ -141,6 +143,24 @@
           <div class="choice-record" id="complete-choices"></div>
           <button id="btn-next-chapter" class="menu-btn primary" data-i18n="chapterComplete.nextChapter"></button>
           <button id="btn-view-summary" class="menu-btn secondary hidden" data-i18n="chapterComplete.viewSummary"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-panel" class="hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="settings-backdrop"></div>
+      <div class="settings-content">
+        <button
+          id="btn-close-settings"
+          class="settings-close"
+          type="button"
+          data-i18n-aria-label="settings.close"
+          data-i18n-title="settings.close"
+        >×</button>
+        <h2 id="settings-title" data-i18n="settings.title"></h2>
+        <div class="settings-row">
+          <div class="settings-label" data-i18n="settings.graphicsQuality"></div>
+          <div id="settings-graphics-options" class="settings-segment" role="group"></div>
         </div>
       </div>
     </div>

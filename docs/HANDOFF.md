@@ -13,7 +13,8 @@
 - `a8ae0e7 Lazy load 3D chapters`
 - `8dfa12f Add cinematic chapter intros`
 - add procedural audio director and sound controls
-- latest: add runtime graphics quality presets
+- add runtime graphics quality presets
+- latest: add a product settings panel
 
 ## What Changed
 
@@ -46,6 +47,7 @@
 - Added `src/core/GraphicsSettings.js` for tested low, balanced, and cinematic graphics presets.
 - Wired runtime graphics quality into `GameEngine`: pixel ratio cap, shadow enable/type/map size, Bloom settings, and tone-mapping exposure now update together.
 - Added a small HUD graphics button that cycles presets, persists the choice, and exposes localized title/ARIA labels.
+- Added a localized settings panel reachable from the main menu and pause menu, with explicit low/balanced/cinematic graphics choices backed by the same graphics preset model.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -59,7 +61,7 @@ npm run build
 
 Test result:
 
-- 36 passed / 0 failed
+- 37 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5175/`:
 
@@ -74,6 +76,8 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Chapter intro overlay renders on first chapter load, fades/skips correctly, and leaves the mission HUD/canvas active afterward.
 - Audio toggle renders in the game HUD, toggles muted state, and keeps the scene running without console errors.
 - Graphics quality button renders in the game HUD, starts on balanced, cycles to cinematic, updates its localized tooltip/title, and keeps the scene running without console errors.
+- Settings panel renders from the main menu, highlights the active graphics preset, and applies the selected preset before a chapter is loaded.
+- Pause menu settings opens while the game is paused, applies graphics changes immediately, and returns to the pause menu when closed.
 
 ## Known Notes
 
@@ -91,4 +95,4 @@ npm run dev -- --host 127.0.0.1
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
-- Consider a real settings panel once there are more player-facing toggles such as camera sensitivity, subtitles, and accessibility contrast.
+- Extend the settings panel with camera sensitivity, subtitles, and accessibility contrast.

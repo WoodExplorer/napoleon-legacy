@@ -28,6 +28,7 @@ export const zhCN = {
   menu: {
     newGame: '开始新游戏',
     continue: '继续游戏',
+    settings: '设置',
     about: '关于游戏',
     back: '返回',
     chapterSelect: '选择章节',
@@ -55,6 +56,11 @@ export const zhCN = {
     low: '低',
     balanced: '均衡',
     cinematic: '电影',
+  },
+  settings: {
+    title: '设置',
+    close: '关闭设置',
+    graphicsQuality: '画质',
   },
   game: {
     interactPrompt: '与 {name} 交谈',

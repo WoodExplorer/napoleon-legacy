@@ -224,6 +224,10 @@ export class GameEngine {
     return this.graphicsPreset;
   }
 
+  getGraphicsQuality() {
+    return this.graphicsQuality;
+  }
+
   refreshHudControls() {
     this._syncAudioControls();
     this._syncGraphicsControls();
