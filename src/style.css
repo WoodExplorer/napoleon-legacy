@@ -194,6 +194,14 @@ html, body {
 #hud-chapter-name { font-family: var(--font-title); font-size: 1.1rem; color: var(--text-primary); }
 .hud-controls-hint { display: flex; gap: 1rem; font-size: 0.72rem; color: rgba(255,255,255,0.4); }
 .hud-controls-hint span { background: rgba(255,255,255,0.08); padding: 0.2rem 0.5rem; border-radius: 3px; }
+.audio-toggle {
+  width: 34px; height: 34px; border: 1px solid rgba(232,201,122,0.28); border-radius: 7px;
+  background: rgba(5,13,21,0.48); color: var(--gold-light);
+  font-size: 1rem; line-height: 1; cursor: pointer; pointer-events: auto;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.audio-toggle.muted { color: rgba(240,232,213,0.42); border-color: rgba(255,255,255,0.16); }
+.audio-toggle:hover { border-color: rgba(232,201,122,0.7); }
 
 #mission-panel {
   position: absolute; top: 5.2rem; right: 1.5rem;
@@ -482,6 +490,7 @@ html, body {
   .locale-switcher { position: static; margin: 0 auto 1rem; width: max-content; }
   #dialogue-box { padding: 1.5rem 1.2rem 2rem; flex-direction: column; }
   .hud-controls-hint { display: none; }
+  .audio-toggle { position: absolute; top: 1rem; right: 1rem; }
   #mission-panel { top: 4.25rem; right: 1rem; left: 1rem; width: auto; }
   .cinematic-copy { bottom: 5.4rem; }
   #cinematic-skip { right: 1rem; bottom: 1rem; }

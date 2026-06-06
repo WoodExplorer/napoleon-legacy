@@ -46,6 +46,10 @@ export const en = {
     kicker: 'Historical Theater',
     skip: 'Skip',
   },
+  audio: {
+    mute: 'Mute sound',
+    enable: 'Enable sound',
+  },
   game: {
     interactPrompt: 'Talk to {name}',
     dialogueContinue: 'Click to continue',

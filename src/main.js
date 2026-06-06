@@ -157,6 +157,9 @@ async function ensureEngine() {
         progressFill: $('cinematic-progress-fill'),
         skip: $('cinematic-skip'),
       });
+      created.setupAudioControls({
+        toggle: $('audio-toggle'),
+      });
       setupMobileControls();
       setupPauseMenu();
       engine = created;

@@ -10,6 +10,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
+import { AudioDirector } from './AudioDirector.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
@@ -46,6 +47,7 @@ export class GameEngine {
     this.player = null;
     this.input = new InputController();
     this.dialogue = null;
+    this.audio = new AudioDirector();
     this.plotEngine = null;
     this.gameState = null;
     this.inDialogue = false;
@@ -57,9 +59,11 @@ export class GameEngine {
     this.pointerLook = null;
     this.missionUI = null;
     this.cinematicUI = null;
+    this.audioUI = null;
     this.cinematicIntro = null;
     this._missionSyncTimer = 0;
     this._movementBlocked = false;
+    this._isMoving = false;
     this._rafId = null;
     this._init();
   }
@@ -141,6 +145,16 @@ export class GameEngine {
     uiElements.skip?.addEventListener('click', () => this.skipCinematicIntro());
   }
 
+  setupAudioControls(uiElements) {
+    this.audioUI = uiElements;
+    uiElements.toggle?.addEventListener('click', () => {
+      this.audio.playUi();
+      this.audio.toggleMuted();
+      this._syncAudioControls();
+    });
+    this._syncAudioControls();
+  }
+
   setPlotEngine(pe, gameState) {
     this.plotEngine = pe;
     this.gameState = gameState;
@@ -180,6 +194,7 @@ export class GameEngine {
     };
 
     pe.onTriggerEvent = (eventName) => {
+       this.audio.playEvent(eventName);
        if (this.currentChapterScene && this.currentChapterScene.handleEvent) {
           this.currentChapterScene.handleEvent(eventName);
        }
@@ -204,6 +219,9 @@ export class GameEngine {
     this.renderPass.camera = this.camera;
     this.currentChapterScene = chapterScene;
     this.player = chapterScene.build(this.scene);
+    this.audio.startChapterAmbience(chapterScene.index)
+      .then(() => this._syncAudioControls())
+      .catch(() => this._syncAudioControls());
     this._attachObjectiveMarkers();
 
     // 重置相机参数
@@ -223,6 +241,7 @@ export class GameEngine {
 
   skipCinematicIntro() {
     if (!this.cinematicIntro) return;
+    this.audio.playUi();
     const pose = getIntroCameraPose(this.cinematicIntro, this.cinematicIntro.durationMs);
     this._applyCinematicPose(pose);
     this._finishCinematicIntro();
@@ -236,6 +255,7 @@ export class GameEngine {
 
   stop() {
     if (this._rafId) { cancelAnimationFrame(this._rafId); this._rafId = null; }
+    this.audio.stopChapterAmbience();
   }
 
   _loop() {
@@ -256,6 +276,7 @@ export class GameEngine {
 
     if (this.currentChapterScene) this.currentChapterScene.update(delta);
     this._updateSceneEffects(delta);
+    this.audio.updateMovement(delta, { moving: this._isMoving && !this.cinematicIntro, blocked: this._movementBlocked });
     this._missionSyncTimer += delta;
     if (this._missionSyncTimer > 0.18) {
       this._missionSyncTimer = 0;
@@ -336,9 +357,11 @@ export class GameEngine {
       this.player.position.z = next.z;
       this._movementBlocked = next.blocked;
       const movedSq = (next.x - startX) ** 2 + (next.z - startZ) ** 2;
-      if (anim) anim.setState(movedSq > 0.00001 ? 'walk' : 'idle');
+      this._isMoving = movedSq > 0.00001;
+      if (anim) anim.setState(this._isMoving ? 'walk' : 'idle');
     } else {
       this._movementBlocked = false;
+      this._isMoving = false;
       if (anim) anim.setState('idle');
     }
 
@@ -415,6 +438,16 @@ export class GameEngine {
     } else {
       promptEl?.classList.add('hidden');
     }
+  }
+
+  _syncAudioControls() {
+    if (!this.audioUI?.toggle) return;
+    const label = this.audio.muted ? t('audio.enable') : t('audio.mute');
+    this.audioUI.toggle.textContent = this.audio.muted ? '♪' : '♫';
+    this.audioUI.toggle.setAttribute('aria-label', label);
+    this.audioUI.toggle.setAttribute('title', label);
+    this.audioUI.toggle.setAttribute('aria-pressed', String(!this.audio.muted));
+    this.audioUI.toggle.classList.toggle('muted', this.audio.muted);
   }
 
   _attachObjectiveMarkers() {
@@ -542,6 +575,7 @@ export class GameEngine {
   _startDialogue(npc) {
     if (!this.dialogue || !this.currentChapterScene) return;
 
+    this.audio.playUi();
     if (npc.animator) npc.animator.setState('talk');
     if (this.currentChapterScene.playerAnimator) {
       this.currentChapterScene.playerAnimator.setState('talk');

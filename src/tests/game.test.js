@@ -1,5 +1,11 @@
 import { PlotEngine } from '../core/PlotEngine.js';
 import {
+  getChapterAmbienceProfile,
+  getEventSoundProfile,
+  getFootstepInterval,
+  MASTER_VOLUME,
+} from '../core/AudioDirector.js';
+import {
   createIntroState,
   easeInOutCubic,
   getIntroCameraPose,
@@ -468,6 +474,30 @@ test('intro overlay stays visible before fading out near the end', () => {
   const complete = getIntroOverlayState(1);
   assertEqual(complete.visible, false);
   assertClose(complete.opacity, 0);
+});
+
+console.log('\nAudioDirector');
+test('chapter ambience profiles fall back to the first chapter', () => {
+  const first = getChapterAmbienceProfile(0);
+  const fallback = getChapterAmbienceProfile(999);
+  assertEqual(first.baseHz, fallback.baseHz);
+  assert(first.baseHz > 0);
+  assert(first.shimmerHz > first.baseHz);
+});
+
+test('footstep interval clamps by speed and blocks when movement is blocked', () => {
+  assertEqual(getFootstepInterval(true), Infinity);
+  assertClose(getFootstepInterval(false, 100), 0.24);
+  assertClose(getFootstepInterval(false, 0.01), 0.52);
+});
+
+test('event sound profiles distinguish artillery impact from generic pulses', () => {
+  const artillery = getEventSoundProfile('artillery_fire');
+  const generic = getEventSoundProfile('unknown');
+  assertEqual(artillery.type, 'impact');
+  assert(artillery.duration > generic.duration);
+  assert(artillery.volume > generic.volume);
+  assert(MASTER_VOLUME > 0 && MASTER_VOLUME <= 1);
 });
 
 console.log(`\nResult: ${passed} passed / ${failed} failed`);
