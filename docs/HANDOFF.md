@@ -18,7 +18,8 @@
 - add performance HUD telemetry
 - add optional auto quality
 - add low-FPS quality recommendation
-- latest: add auto quality adjustment feedback
+- add auto quality adjustment feedback
+- latest: add camera sensitivity settings
 
 ## What Changed
 
@@ -58,6 +59,8 @@
 - Added an optional Auto Quality settings switch; when enabled, low FPS telemetry can automatically step graphics down one preset and persist the safer quality.
 - Added a tested low-FPS recommendation controller for manual mode, plus a localized in-game toast that can enable Auto Quality or be dismissed.
 - Added a localized auto-quality adjustment toast so players are told when Auto Quality lowers graphics to a safer preset.
+- Added `src/core/CameraSettings.js` for tested camera sensitivity persistence, range clamping, and percentage formatting.
+- Added a settings-panel camera sensitivity slider that affects mouse drag, keyboard camera turn, and mobile look speed.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -71,7 +74,7 @@ npm run build
 
 Test result:
 
-- 45 passed / 0 failed
+- 48 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5175/`:
 
@@ -92,6 +95,7 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Auto Quality toggle persists through settings, the HUD badge marks auto mode with `A`, and the first chapter keeps rendering with no console errors or warnings.
 - Low-FPS recommendation toast is present, localized, hidden by default, and does not disturb the first chapter HUD layout when inactive; prompt trigger/cooldown behavior is covered by unit tests.
 - Auto-quality adjustment toast shell is present, localized through the shared translation system, hidden by default, and does not disturb the first chapter HUD layout when inactive.
+- Camera sensitivity slider renders in the settings panel, defaults to 100%, updates to 140% when dragged, persists before chapter load, and the first chapter still renders without console errors.
 
 ## Known Notes
 
@@ -109,4 +113,4 @@ npm run dev -- --host 127.0.0.1
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
-- Add camera sensitivity, subtitle display, and accessibility contrast controls to the settings panel.
+- Add subtitle display and accessibility contrast controls to the settings panel.

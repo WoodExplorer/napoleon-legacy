@@ -488,6 +488,9 @@ html, body {
 .settings-toggle-row {
   grid-template-columns: 1fr auto; align-items: center;
 }
+.settings-range-row {
+  grid-template-columns: 1fr;
+}
 .settings-label {
   color: rgba(240,232,213,0.78); font-size: 0.78rem; font-weight: 700;
   letter-spacing: 0.11em; text-transform: uppercase;
@@ -528,6 +531,16 @@ html, body {
 }
 .settings-switch.active .settings-switch-track { background: rgba(126,227,155,0.32); }
 .settings-switch.active .settings-switch-thumb { transform: translateX(14px); background: #7fe39b; }
+.settings-range-control {
+  display: grid; grid-template-columns: 1fr 54px; gap: 0.75rem; align-items: center;
+}
+.settings-range {
+  width: 100%; accent-color: var(--gold-light); cursor: pointer;
+}
+.settings-range-value {
+  color: var(--gold-light); font-size: 0.78rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; text-align: right;
+}
 
 /* ===== Mobile Controls ===== */
 #mobile-controls { position: absolute; inset: 0; pointer-events: none; }

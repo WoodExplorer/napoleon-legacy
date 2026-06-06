@@ -62,6 +62,7 @@ export const en = {
     close: 'Close settings',
     graphicsQuality: 'Graphics Quality',
     autoQuality: 'Auto Quality',
+    cameraSensitivity: 'Camera Sensitivity',
     on: 'On',
     off: 'Off',
   },

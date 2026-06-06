@@ -7,6 +7,14 @@ import {
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
 import {
+  CAMERA_SENSITIVITY_STORAGE_KEY,
+  DEFAULT_CAMERA_SENSITIVITY,
+  formatCameraSensitivity,
+  loadCameraSensitivity,
+  normalizeCameraSensitivity,
+  saveCameraSensitivity,
+} from '../core/CameraSettings.js';
+import {
   createIntroState,
   easeInOutCubic,
   getIntroCameraPose,
@@ -599,6 +607,39 @@ test('quality recommendation cooldown prevents repeated prompts', () => {
   assert(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }));
   controller.dismiss();
   assertEqual(controller.record(pressure, { autoEnabled: false, currentQuality: 'balanced' }), null);
+});
+
+console.log('\nCameraSettings');
+test('normalizes camera sensitivity inside supported bounds', () => {
+  assertEqual(normalizeCameraSensitivity('bad'), DEFAULT_CAMERA_SENSITIVITY);
+  assertEqual(normalizeCameraSensitivity(0), 0.5);
+  assertEqual(normalizeCameraSensitivity(2), 1.5);
+  assertEqual(normalizeCameraSensitivity(1.2), 1.2);
+});
+
+test('formats camera sensitivity as a percentage', () => {
+  assertEqual(formatCameraSensitivity(1), '100%');
+  assertEqual(formatCameraSensitivity(0.75), '75%');
+  assertEqual(formatCameraSensitivity(1.49), '149%');
+});
+
+test('persists camera sensitivity while tolerating broken storage', () => {
+  const storage = {
+    values: {},
+    getItem(key) { return this.values[key] ?? null; },
+    setItem(key, value) { this.values[key] = value; },
+  };
+  assertEqual(loadCameraSensitivity(storage), DEFAULT_CAMERA_SENSITIVITY);
+  assertEqual(saveCameraSensitivity(1.3, storage), 1.3);
+  assertEqual(storage.values[CAMERA_SENSITIVITY_STORAGE_KEY], '1.3');
+  assertEqual(loadCameraSensitivity(storage), 1.3);
+
+  const brokenStorage = {
+    getItem() { throw new Error('blocked'); },
+    setItem() { throw new Error('blocked'); },
+  };
+  assertEqual(loadCameraSensitivity(brokenStorage), DEFAULT_CAMERA_SENSITIVITY);
+  assertEqual(saveCameraSensitivity(0.8, brokenStorage), 0.8);
 });
 
 console.log('\nPerformanceMonitor');

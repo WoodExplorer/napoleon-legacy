@@ -12,6 +12,7 @@ import { DialogueSystem } from '../dialogue/DialogueSystem.js';
 import { t } from '../i18n/index.js';
 import { AudioDirector } from './AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from './AutoQuality.js';
+import { loadCameraSensitivity, normalizeCameraSensitivity, saveCameraSensitivity } from './CameraSettings.js';
 import { createIntroState, getIntroCameraPose, getIntroOverlayState } from './CinematicDirector.js';
 import {
   getGraphicsPreset,
@@ -76,6 +77,7 @@ export class GameEngine {
     this.autoQuality = new AutoQualityController();
     this.qualityRecommendation = new QualityRecommendationController();
     this.autoGraphicsEnabled = loadAutoGraphicsEnabled();
+    this.cameraSensitivity = loadCameraSensitivity();
     this.graphicsQuality = loadGraphicsQuality();
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
     this.cinematicIntro = null;
@@ -172,8 +174,8 @@ export class GameEngine {
       const dx = e.clientX - this.pointerLook.x;
       const dy = e.clientY - this.pointerLook.y;
       this.pointerLook = { x: e.clientX, y: e.clientY };
-      this.camYaw += dx * 0.0045;
-      this.camPitch = Math.max(-0.78, Math.min(0.18, this.camPitch + dy * 0.0025));
+      this.camYaw += dx * 0.0045 * this.cameraSensitivity;
+      this.camPitch = Math.max(-0.78, Math.min(0.18, this.camPitch + dy * 0.0025 * this.cameraSensitivity));
       this._updateCamera();
     });
     const clearPointer = () => { this.pointerLook = null; };
@@ -266,6 +268,15 @@ export class GameEngine {
 
   getAutoGraphicsEnabled() {
     return this.autoGraphicsEnabled;
+  }
+
+  setCameraSensitivity(value, options = {}) {
+    this.cameraSensitivity = options.persist ? saveCameraSensitivity(value) : normalizeCameraSensitivity(value);
+    return this.cameraSensitivity;
+  }
+
+  getCameraSensitivity() {
+    return this.cameraSensitivity;
   }
 
   refreshHudControls() {
@@ -516,12 +527,13 @@ export class GameEngine {
 
   _handleCamera(delta) {
     const inp = this.input;
-    if (inp.camLeft)  this.camYaw -= CAM_SPEED * delta;
-    if (inp.camRight) this.camYaw += CAM_SPEED * delta;
+    const speed = CAM_SPEED * this.cameraSensitivity;
+    if (inp.camLeft)  this.camYaw -= speed * delta;
+    if (inp.camRight) this.camYaw += speed * delta;
     // Mobile look
     if (this.input.lookVector) {
-      this.camYaw += this.input.lookVector.x * CAM_SPEED * delta * 2;
-      this.camPitch = Math.max(-0.8, Math.min(0, this.camPitch - this.input.lookVector.y * CAM_SPEED * delta));
+      this.camYaw += this.input.lookVector.x * speed * delta * 2;
+      this.camPitch = Math.max(-0.8, Math.min(0, this.camPitch - this.input.lookVector.y * speed * delta));
     }
     this._updateCamera();
   }
