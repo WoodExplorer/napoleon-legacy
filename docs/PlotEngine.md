@@ -2,7 +2,9 @@
 
 `PlotEngine` 是游戏的核心剧情执行引擎。它将游戏的剧情从 `GameEngine` 和各个 3D 场景类中剥离，转变为纯粹的数据驱动 (Data-Driven) 模式。
 
-所有的剧情数据都存放在 `src/data/plotData.js` 文件中。设计人员只需要编写和修改这个文件里的数据节点（Node），就可以创造出复杂的网状剧情结构。
+所有的剧情结构都存放在 `src/data/plotData.js` 文件中。设计人员只需要编写和修改这个文件里的数据节点（Node），就可以创造出复杂的网状剧情结构。
+
+实际显示给玩家的文本存放在 `src/i18n/locales/*.js`。剧情节点只保存 `speakerKey`、`textKey` 和 `choice.textKey`，由 `PlotEngine` 在运行时本地化。默认语言是英文。
 
 ## 核心概念
 
@@ -29,12 +31,12 @@
 ```javascript
 "ch2_gen_q1": {
   type: "dialog", 
-  speaker: "拿破仑", 
+  speakerKey: "characters.napoleon", 
   portraitColor: "#1a3a5c", 
-  text: "将军，土伦港的关键在于穆格雷特高地...",
+  textKey: "plot.ch2.general.q1",
   choices: [
-    { text: "强攻", impact: { strategy: 12 }, next: "ch2_gen_a1_force" },
-    { text: "迂回", impact: { humanity: 10 }, next: "ch2_gen_a1_flank" }
+    { textKey: "plot.ch2.general.choices.force", impact: { strategy: 12 }, next: "ch2_gen_a1_force" },
+    { textKey: "plot.ch2.general.choices.flank", impact: { humanity: 10 }, next: "ch2_gen_a1_flank" }
   ]
 }
 ```
@@ -87,4 +89,5 @@
 
 1. **闭环设计**：当你设计一个循环时（例如和多个NPC说话才能触发后续），确保 `defaultNext` 总是能安全地回到一个 `explore` 节点，否则游戏会卡死。
 2. **唯一命名**：给每个节点一个具有描述性的全局唯一 ID，建议带上章节前缀（例如 `ch3_start`, `ch3_npc_talk`）。
-3. **单元测试**：如果你添加了复杂的网状循环结构，可以在 `src/tests/PlotEngine.test.js` 中添加针对你这个新剧情片段的逻辑连通性测试。
+3. **文本资源**：新增剧情时，同步补齐 `src/i18n/locales/en.js` 和 `src/i18n/locales/zh-CN.js` 的翻译 key。
+4. **单元测试**：如果你添加了复杂的网状循环结构，可以在 `src/tests/game.test.js` 中添加针对你这个新剧情片段的逻辑连通性测试。
