@@ -63,6 +63,7 @@
             <span id="performance-fps">--</span>
             <span class="performance-unit">FPS</span>
             <span id="performance-quality">B</span>
+            <span id="performance-auto" class="performance-auto"></span>
           </div>
           <button id="graphics-quality-toggle" class="graphics-quality-toggle" type="button">◐</button>
           <button id="audio-toggle" class="audio-toggle" type="button" aria-pressed="true">♫</button>
@@ -166,6 +167,13 @@
         <div class="settings-row">
           <div class="settings-label" data-i18n="settings.graphicsQuality"></div>
           <div id="settings-graphics-options" class="settings-segment" role="group"></div>
+        </div>
+        <div class="settings-row settings-toggle-row">
+          <div class="settings-label" data-i18n="settings.autoQuality"></div>
+          <button id="settings-auto-quality" class="settings-switch" type="button" aria-pressed="false">
+            <span class="settings-switch-track"><span class="settings-switch-thumb"></span></span>
+            <span class="settings-switch-state" data-i18n="settings.off"></span>
+          </button>
         </div>
       </div>
     </div>

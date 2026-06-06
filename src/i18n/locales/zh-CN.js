@@ -61,6 +61,9 @@ export const zhCN = {
     title: '设置',
     close: '关闭设置',
     graphicsQuality: '画质',
+    autoQuality: '自动画质',
+    on: '开',
+    off: '关',
   },
   game: {
     interactPrompt: '与 {name} 交谈',

@@ -61,6 +61,9 @@ export const en = {
     title: 'Settings',
     close: 'Close settings',
     graphicsQuality: 'Graphics Quality',
+    autoQuality: 'Auto Quality',
+    on: 'On',
+    off: 'Off',
   },
   game: {
     interactPrompt: 'Talk to {name}',

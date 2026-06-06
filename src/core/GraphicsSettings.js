@@ -1,5 +1,7 @@
 export const GRAPHICS_STORAGE_KEY = 'napoleon_graphics_quality';
+export const AUTO_GRAPHICS_STORAGE_KEY = 'napoleon_graphics_auto';
 export const DEFAULT_GRAPHICS_QUALITY = 'balanced';
+export const DEFAULT_AUTO_GRAPHICS_ENABLED = false;
 export const GRAPHICS_QUALITY_ORDER = ['low', 'balanced', 'cinematic'];
 
 export const GRAPHICS_PRESETS = Object.freeze({
@@ -59,6 +61,12 @@ export function getNextGraphicsQuality(quality) {
   return GRAPHICS_QUALITY_ORDER[(currentIndex + 1) % GRAPHICS_QUALITY_ORDER.length];
 }
 
+export function getLowerGraphicsQuality(quality) {
+  const normalized = normalizeGraphicsQuality(quality);
+  const currentIndex = GRAPHICS_QUALITY_ORDER.indexOf(normalized);
+  return GRAPHICS_QUALITY_ORDER[Math.max(0, currentIndex - 1)];
+}
+
 export function loadGraphicsQuality(storage = globalThis.localStorage) {
   try {
     return normalizeGraphicsQuality(storage?.getItem(GRAPHICS_STORAGE_KEY));
@@ -71,6 +79,25 @@ export function saveGraphicsQuality(quality, storage = globalThis.localStorage) 
   const normalized = normalizeGraphicsQuality(quality);
   try {
     storage?.setItem(GRAPHICS_STORAGE_KEY, normalized);
+  } catch {
+    // Rendering preferences should never block play if storage is unavailable.
+  }
+  return normalized;
+}
+
+export function loadAutoGraphicsEnabled(storage = globalThis.localStorage) {
+  try {
+    const saved = storage?.getItem(AUTO_GRAPHICS_STORAGE_KEY);
+    return saved === null || saved === undefined ? DEFAULT_AUTO_GRAPHICS_ENABLED : saved === 'true';
+  } catch {
+    return DEFAULT_AUTO_GRAPHICS_ENABLED;
+  }
+}
+
+export function saveAutoGraphicsEnabled(enabled, storage = globalThis.localStorage) {
+  const normalized = Boolean(enabled);
+  try {
+    storage?.setItem(AUTO_GRAPHICS_STORAGE_KEY, String(normalized));
   } catch {
     // Rendering preferences should never block play if storage is unavailable.
   }
