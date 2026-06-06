@@ -247,6 +247,10 @@ async function ensureEngine() {
         fps: $('performance-fps'),
         quality: $('performance-quality'),
         auto: $('performance-auto'),
+        recommendation: $('performance-recommendation'),
+        recommendationText: $('performance-recommendation-text'),
+        enableAuto: $('btn-enable-auto-quality'),
+        dismissRecommendation: $('btn-dismiss-performance-recommendation'),
       });
       setupMobileControls();
       setupPauseMenu();

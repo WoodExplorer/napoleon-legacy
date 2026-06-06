@@ -16,7 +16,8 @@
 - add runtime graphics quality presets
 - add a product settings panel
 - add performance HUD telemetry
-- latest: add optional auto quality
+- add optional auto quality
+- latest: add low-FPS quality recommendation
 
 ## What Changed
 
@@ -54,6 +55,7 @@
 - Added a compact in-game FPS/quality HUD badge that updates from the render loop and shares the active graphics preset state.
 - Added `src/core/AutoQuality.js` for tested sustained-pressure downgrade decisions with cooldown protection.
 - Added an optional Auto Quality settings switch; when enabled, low FPS telemetry can automatically step graphics down one preset and persist the safer quality.
+- Added a tested low-FPS recommendation controller for manual mode, plus a localized in-game toast that can enable Auto Quality or be dismissed.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
 
 ## Verification
@@ -67,7 +69,7 @@ npm run build
 
 Test result:
 
-- 43 passed / 0 failed
+- 45 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5175/`:
 
@@ -86,6 +88,7 @@ Browser checks performed at `http://127.0.0.1:5175/`:
 - Pause menu settings opens while the game is paused, applies graphics changes immediately, and returns to the pause menu when closed.
 - Performance badge renders in the first chapter HUD, reports live FPS and active quality shorthand, and updates when the graphics preset changes.
 - Auto Quality toggle persists through settings, the HUD badge marks auto mode with `A`, and the first chapter keeps rendering with no console errors or warnings.
+- Low-FPS recommendation toast is present, localized, hidden by default, and does not disturb the first chapter HUD layout when inactive; prompt trigger/cooldown behavior is covered by unit tests.
 
 ## Known Notes
 
@@ -103,5 +106,5 @@ npm run dev -- --host 127.0.0.1
 - Add lightweight browser smoke tests for language switching and first-chapter rendering.
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
-- Add a clear low-FPS recommendation toast when Auto Quality is off and the scene remains strained.
+- Add visual confirmation when Auto Quality actually downgrades the preset during gameplay.
 - Extend the settings panel with camera sensitivity, subtitles, and accessibility contrast.

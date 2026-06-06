@@ -65,6 +65,11 @@ export const zhCN = {
     on: '开',
     off: '关',
   },
+  performance: {
+    recommendAutoQuality: '当前帧率承压，开启自动画质可稳定渲染。',
+    enableAuto: '开启自动',
+    dismiss: '关闭性能建议',
+  },
   game: {
     interactPrompt: '与 {name} 交谈',
     dialogueContinue: '点击继续',

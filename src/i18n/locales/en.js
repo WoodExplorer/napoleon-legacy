@@ -65,6 +65,11 @@ export const en = {
     on: 'On',
     off: 'Off',
   },
+  performance: {
+    recommendAutoQuality: 'Frame rate is under pressure. Auto Quality can stabilize rendering.',
+    enableAuto: 'Enable Auto',
+    dismiss: 'Dismiss performance recommendation',
+  },
   game: {
     interactPrompt: 'Talk to {name}',
     dialogueContinue: 'Click to continue',
