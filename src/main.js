@@ -251,6 +251,8 @@ async function ensureEngine() {
         recommendationText: $('performance-recommendation-text'),
         enableAuto: $('btn-enable-auto-quality'),
         dismissRecommendation: $('btn-dismiss-performance-recommendation'),
+        adjustmentToast: $('quality-adjustment-toast'),
+        adjustmentText: $('quality-adjustment-text'),
       });
       setupMobileControls();
       setupPauseMenu();

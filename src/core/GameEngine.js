@@ -83,6 +83,7 @@ export class GameEngine {
     this._movementBlocked = false;
     this._isMoving = false;
     this._rafId = null;
+    this._qualityToastTimer = null;
     this._init();
   }
 
@@ -604,6 +605,7 @@ export class GameEngine {
     const action = this.autoQuality.record(snapshot, this.graphicsQuality);
     if (!action) return;
     this.setGraphicsQuality(action.to, { persist: true, source: 'auto' });
+    this._showAutoQualityAdjustment(action);
   }
 
   _evaluateQualityRecommendation(snapshot) {
@@ -626,6 +628,20 @@ export class GameEngine {
 
   _hideQualityRecommendation() {
     this.performanceUI?.recommendation?.classList.add('hidden');
+  }
+
+  _showAutoQualityAdjustment(action) {
+    if (!this.performanceUI?.adjustmentToast || !this.performanceUI.adjustmentText) return;
+    const preset = getGraphicsPreset(action.to);
+    this.performanceUI.adjustmentText.textContent = t('performance.autoAdjusted', {
+      quality: t(preset.labelKey),
+    });
+    this.performanceUI.adjustmentToast.classList.remove('hidden');
+    if (this._qualityToastTimer) clearTimeout(this._qualityToastTimer);
+    this._qualityToastTimer = setTimeout(() => {
+      this.performanceUI?.adjustmentToast?.classList.add('hidden');
+      this._qualityToastTimer = null;
+    }, 3600);
   }
 
   _attachObjectiveMarkers() {

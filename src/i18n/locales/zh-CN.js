@@ -69,6 +69,7 @@ export const zhCN = {
     recommendAutoQuality: '当前帧率承压，开启自动画质可稳定渲染。',
     enableAuto: '开启自动',
     dismiss: '关闭性能建议',
+    autoAdjusted: '自动画质已将画质降至{quality}。',
   },
   game: {
     interactPrompt: '与 {name} 交谈',
