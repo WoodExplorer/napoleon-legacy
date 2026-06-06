@@ -1,92 +1,217 @@
+const speaker = key => `characters.${key}`;
+const line = (chapter, actor, part) => `plot.${chapter}.${actor}.${part}`;
+const choice = (chapter, actor, key) => `plot.${chapter}.${actor}.choices.${key}`;
+const answer = (chapter, actor, key) => `plot.${chapter}.${actor}.answers.${key}`;
+
 export const plotData = {
-  // CHAPTER 1
-  "ch1_start": {
-    type: "explore",
-    interactions: {
-      "mother": "ch1_mother_start",
-      "mentor": "ch1_mentor_start"
-    }
-  },
-  "ch1_mother_start": { type: "dialog", speaker: "莱蒂西亚·波拿巴", portraitColor: "#8b5e3c", text: "拿破仑，孩子，你终于从布里埃纳军校回来了。这一年你过得如何？", next: "ch1_mother_q1" },
-  "ch1_mother_q1": {
-    type: "dialog", speaker: "拿破仑", portraitColor: "#1a3a5c", text: "母亲，同学们总嘲笑我的科西嘉口音，说我是外乡人。我该如何面对这些嘲讽？",
+  ch1_start: { type: 'explore', interactions: { mother: 'ch1_mother_start', mentor: 'ch1_mentor_start' } },
+  ch1_mother_start: { type: 'dialog', speakerKey: speaker('letizia'), portraitColor: '#8b5e3c', textKey: line('ch1', 'mother', 'start'), next: 'ch1_mother_q1' },
+  ch1_mother_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch1', 'mother', 'q1'),
     choices: [
-      { text: "用行动证明自己——在学业和军事上超越他们", impact: { strategy: 10, legacy: 5 }, next: "ch1_mother_a1_study" },
-      { text: "寻求和解，与同学建立友谊", impact: { diplomacy: 10, loyalty: 5 }, next: "ch1_mother_a1_friend" },
-      { text: "拒绝接受，坚守科西嘉人的身份认同", impact: { humanity: 8, strategy: 3 }, next: "ch1_mother_a1_pride" }
-    ]
-  },
-  "ch1_mother_a1_study": { type: "dialog", speaker: "莱蒂西亚·波拿巴", portraitColor: "#8b5e3c", text: "说得好，我的孩子！波拿巴家族的荣耀需要你去争取。勤奋是你最好的武器。", next: "ch1_mother_end" },
-  "ch1_mother_a1_friend": { type: "dialog", speaker: "莱蒂西亚·波拿巴", portraitColor: "#8b5e3c", text: "你有一颗宽广的心。结交盟友，日后你会明白朋友的价值无可替代。", next: "ch1_mother_end" },
-  "ch1_mother_a1_pride": { type: "dialog", speaker: "莱蒂西亚·波拿巴", portraitColor: "#8b5e3c", text: "科西嘉是我们的根，永远不要忘记。但也要学会在法兰西的世界里生存。", next: "ch1_mother_end" },
-  "ch1_mother_end": { type: "set_flag", flag: "ch1_talked_mother", value: true, next: "ch1_check" },
-
-  "ch1_mentor_start": { type: "dialog", speaker: "帕斯卡尔·保利", portraitColor: "#4a3a6a", text: "年轻的拿破仑，你有军事天赋，这是显而易见的。但你志向何在？", next: "ch1_mentor_q1" },
-  "ch1_mentor_q1": {
-    type: "dialog", speaker: "拿破仑", portraitColor: "#1a3a5c", text: "保利将军，科西嘉刚并入法国不久，我们的命运将向何处？",
-    choices: [
-      { text: "我要加入法国军队，为国家效力，从中取得功名", impact: { strategy: 8, legacy: 8 }, next: "ch1_mentor_b1_france" },
-      { text: "我要为科西嘉的独立而战斗", impact: { humanity: 10, loyalty: 5 }, next: "ch1_mentor_b1_corsica" },
-      { text: "先积累实力，再做决断", impact: { strategy: 12, diplomacy: 5 }, next: "ch1_mentor_b1_wait" }
-    ]
-  },
-  "ch1_mentor_b1_france": { type: "dialog", speaker: "帕斯卡尔·保利", portraitColor: "#4a3a6a", text: "务实的选择。法兰西是一个舞台，有志者自能在其中书写历史。去吧，创造你的命运！", next: "ch1_mentor_end" },
-  "ch1_mentor_b1_corsica": { type: "dialog", speaker: "帕斯卡尔·保利", portraitColor: "#4a3a6a", text: "这颗爱国之心令我动容。科西嘉的自由值得为之奋斗，但形势比人强，须审时度势。", next: "ch1_mentor_end" },
-  "ch1_mentor_b1_wait": { type: "dialog", speaker: "帕斯卡尔·保利", portraitColor: "#4a3a6a", text: "谨慎而睿智。时机未到时的蛰伏，是为了更好的出击。你有大将之风。", next: "ch1_mentor_end" },
-  "ch1_mentor_end": { type: "set_flag", flag: "ch1_talked_mentor", value: true, next: "ch1_check" },
-
-  "ch1_check": {
-    type: "condition",
-    conditions: [
-      { hasFlags: ["ch1_talked_mother", "ch1_talked_mentor"], next: "ch1_end" }
+      { textKey: choice('ch1', 'mother', 'study'), impact: { strategy: 10, legacy: 5 }, next: 'ch1_mother_a1_study' },
+      { textKey: choice('ch1', 'mother', 'friend'), impact: { diplomacy: 10, loyalty: 5 }, next: 'ch1_mother_a1_friend' },
+      { textKey: choice('ch1', 'mother', 'pride'), impact: { humanity: 8, strategy: 3 }, next: 'ch1_mother_a1_pride' },
     ],
-    defaultNext: "ch1_start"
   },
-  "ch1_end": { type: "chapter_end", nextChapter: 1 },
-
-  // CHAPTER 2
-  "ch2_start": {
-    type: "explore",
-    interactions: {
-      "general": "ch2_gen_start",
-      "junot": "ch2_junot_start"
-    }
-  },
-  "ch2_gen_start": { type: "dialog", speaker: "卡尔托将军", portraitColor: "#3a5a3a", text: "波拿巴上尉，你提出的炮兵方案太过冒进！我们没有足够的火炮。", next: "ch2_gen_q1" },
-  "ch2_gen_q1": {
-    type: "dialog", speaker: "拿破仑", portraitColor: "#1a3a5c", text: "将军，土伦港的关键在于穆格雷特高地。占领那里，英国舰队就必须撤退！",
+  ch1_mother_a1_study: { type: 'dialog', speakerKey: speaker('letizia'), portraitColor: '#8b5e3c', textKey: answer('ch1', 'mother', 'study'), next: 'ch1_mother_end' },
+  ch1_mother_a1_friend: { type: 'dialog', speakerKey: speaker('letizia'), portraitColor: '#8b5e3c', textKey: answer('ch1', 'mother', 'friend'), next: 'ch1_mother_end' },
+  ch1_mother_a1_pride: { type: 'dialog', speakerKey: speaker('letizia'), portraitColor: '#8b5e3c', textKey: answer('ch1', 'mother', 'pride'), next: 'ch1_mother_end' },
+  ch1_mother_end: { type: 'set_flag', flag: 'ch1_talked_mother', value: true, next: 'ch1_check' },
+  ch1_mentor_start: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: line('ch1', 'mentor', 'start'), next: 'ch1_mentor_q1' },
+  ch1_mentor_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch1', 'mentor', 'q1'),
     choices: [
-      { text: "请求将军全力支持，集中所有火炮强攻高地", impact: { strategy: 12, legacy: 8 }, next: "ch2_gen_a1_force" },
-      { text: "提出迂回战术，避免正面强攻减少伤亡", impact: { strategy: 8, humanity: 10 }, next: "ch2_gen_a1_flank" },
-      { text: "绕过将军，直接向督政府申请更多资源", impact: { diplomacy: 10, strategy: 6 }, next: "ch2_gen_a1_report" }
-    ]
-  },
-  "ch2_gen_a1_force": { type: "dialog", speaker: "卡尔托将军", portraitColor: "#3a5a3a", text: "好吧，我批准你的计划。但如果失败，后果自负！准备进攻，波拿巴。", next: "ch2_gen_end" },
-  "ch2_gen_a1_flank": { type: "dialog", speaker: "卡尔托将军", portraitColor: "#3a5a3a", text: "迂回？需要时间，但减少伤亡是值得的。你比我想象的更沉稳，上尉。", next: "ch2_gen_end" },
-  "ch2_gen_a1_report": { type: "dialog", speaker: "卡尔托将军", portraitColor: "#3a5a3a", text: "你敢越级汇报！...但不得不说，你确实懂得如何运用政治手段。", next: "ch2_gen_end" },
-  "ch2_gen_end": { type: "set_flag", flag: "ch2_talked_gen", value: true, next: "ch2_check" },
-
-  "ch2_junot_start": { type: "dialog", speaker: "朱诺上尉", portraitColor: "#2a4a6a", text: "拿破仑，弟兄们都在说你的炮兵计划，大家愿意跟你冲！", next: "ch2_junot_q1" },
-  "ch2_junot_q1": {
-    type: "dialog", speaker: "拿破仑", portraitColor: "#1a3a5c", text: "朱诺，明天的战斗会很危险。你和弟兄们准备好了吗？",
-    choices: [
-      { text: "激励士气：告诉他们此战将名垂青史", impact: { loyalty: 12, legacy: 6 }, next: "ch2_junot_b1_inspire" },
-      { text: "务实准备：详细部署各队战术分工", impact: { strategy: 10, loyalty: 8 }, next: "ch2_junot_b1_plan" },
-      { text: "承诺战后奖赏，提高士兵积极性", impact: { loyalty: 8, diplomacy: 6 }, next: "ch2_junot_b1_reward" }
-    ]
-  },
-  "ch2_junot_b1_inspire": { type: "dialog", speaker: "朱诺上尉", portraitColor: "#2a4a6a", text: "将军的话让我热血沸腾！弟兄们会为你赴死的，拿破仑！", next: "ch2_junot_end" },
-  "ch2_junot_b1_plan": { type: "dialog", speaker: "朱诺上尉", portraitColor: "#2a4a6a", text: "明白！清晰的部署让弟兄们心里有底。我们会按计划执行。", next: "ch2_junot_end" },
-  "ch2_junot_b1_reward": { type: "dialog", speaker: "朱诺上尉", portraitColor: "#2a4a6a", text: "哈！物质激励也很重要。弟兄们会更有干劲的，放心吧！", next: "ch2_junot_end" },
-  "ch2_junot_end": { type: "set_flag", flag: "ch2_talked_junot", value: true, next: "ch2_check" },
-
-  "ch2_check": {
-    type: "condition",
-    conditions: [
-      { hasFlags: ["ch2_talked_gen", "ch2_talked_junot"], next: "ch2_battle_event" }
+      { textKey: choice('ch1', 'mentor', 'france'), impact: { strategy: 8, legacy: 8 }, next: 'ch1_mentor_b1_france' },
+      { textKey: choice('ch1', 'mentor', 'corsica'), impact: { humanity: 10, loyalty: 5 }, next: 'ch1_mentor_b1_corsica' },
+      { textKey: choice('ch1', 'mentor', 'wait'), impact: { strategy: 12, diplomacy: 5 }, next: 'ch1_mentor_b1_wait' },
     ],
-    defaultNext: "ch2_start"
   },
-  "ch2_battle_event": { type: "event", eventName: "artillery_fire", delay: 2000, next: "ch2_end" },
-  "ch2_end": { type: "chapter_end", nextChapter: 2 },
+  ch1_mentor_b1_france: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: answer('ch1', 'mentor', 'france'), next: 'ch1_mentor_end' },
+  ch1_mentor_b1_corsica: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: answer('ch1', 'mentor', 'corsica'), next: 'ch1_mentor_end' },
+  ch1_mentor_b1_wait: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: answer('ch1', 'mentor', 'wait'), next: 'ch1_mentor_end' },
+  ch1_mentor_end: { type: 'set_flag', flag: 'ch1_talked_mentor', value: true, next: 'ch1_check' },
+  ch1_check: { type: 'condition', conditions: [{ hasFlags: ['ch1_talked_mother', 'ch1_talked_mentor'], next: 'ch1_end' }], defaultNext: 'ch1_start' },
+  ch1_end: { type: 'chapter_end', nextChapter: 1 },
+
+  ch2_start: { type: 'explore', interactions: { general: 'ch2_gen_start', junot: 'ch2_junot_start' } },
+  ch2_gen_start: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: line('ch2', 'general', 'start'), next: 'ch2_gen_q1' },
+  ch2_gen_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch2', 'general', 'q1'),
+    choices: [
+      { textKey: choice('ch2', 'general', 'force'), impact: { strategy: 12, legacy: 8 }, next: 'ch2_gen_a1_force' },
+      { textKey: choice('ch2', 'general', 'flank'), impact: { strategy: 8, humanity: 10 }, next: 'ch2_gen_a1_flank' },
+      { textKey: choice('ch2', 'general', 'report'), impact: { diplomacy: 10, strategy: 6 }, next: 'ch2_gen_a1_report' },
+    ],
+  },
+  ch2_gen_a1_force: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'force'), next: 'ch2_gen_end' },
+  ch2_gen_a1_flank: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'flank'), next: 'ch2_gen_end' },
+  ch2_gen_a1_report: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'report'), next: 'ch2_gen_end' },
+  ch2_gen_end: { type: 'set_flag', flag: 'ch2_talked_gen', value: true, next: 'ch2_check' },
+  ch2_junot_start: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: line('ch2', 'junot', 'start'), next: 'ch2_junot_q1' },
+  ch2_junot_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch2', 'junot', 'q1'),
+    choices: [
+      { textKey: choice('ch2', 'junot', 'inspire'), impact: { loyalty: 12, legacy: 6 }, next: 'ch2_junot_b1_inspire' },
+      { textKey: choice('ch2', 'junot', 'plan'), impact: { strategy: 10, loyalty: 8 }, next: 'ch2_junot_b1_plan' },
+      { textKey: choice('ch2', 'junot', 'reward'), impact: { loyalty: 8, diplomacy: 6 }, next: 'ch2_junot_b1_reward' },
+    ],
+  },
+  ch2_junot_b1_inspire: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: answer('ch2', 'junot', 'inspire'), next: 'ch2_junot_end' },
+  ch2_junot_b1_plan: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: answer('ch2', 'junot', 'plan'), next: 'ch2_junot_end' },
+  ch2_junot_b1_reward: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: answer('ch2', 'junot', 'reward'), next: 'ch2_junot_end' },
+  ch2_junot_end: { type: 'set_flag', flag: 'ch2_talked_junot', value: true, next: 'ch2_check' },
+  ch2_check: { type: 'condition', conditions: [{ hasFlags: ['ch2_talked_gen', 'ch2_talked_junot'], next: 'ch2_battle_event' }], defaultNext: 'ch2_start' },
+  ch2_battle_event: { type: 'event', eventName: 'artillery_fire', delay: 2000, next: 'ch2_end' },
+  ch2_end: { type: 'chapter_end', nextChapter: 2 },
+
+  ch3_start: { type: 'explore', interactions: { talleyrand: 'ch3_talleyrand_start', josephine: 'ch3_josephine_start' } },
+  ch3_talleyrand_start: { type: 'dialog', speakerKey: speaker('talleyrand'), portraitColor: '#2a2a6a', textKey: line('ch3', 'talleyrand', 'start'), next: 'ch3_talleyrand_q1' },
+  ch3_talleyrand_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch3', 'talleyrand', 'q1'),
+    choices: [
+      { textKey: choice('ch3', 'talleyrand', 'strong'), impact: { strategy: 10, legacy: 8 }, next: 'ch3_talleyrand_a1_strong' },
+      { textKey: choice('ch3', 'talleyrand', 'peace'), impact: { diplomacy: 15, humanity: 8 }, next: 'ch3_talleyrand_a1_peace' },
+      { textKey: choice('ch3', 'talleyrand', 'divide'), impact: { strategy: 12, diplomacy: 8 }, next: 'ch3_talleyrand_a1_divide' },
+    ],
+  },
+  ch3_talleyrand_a1_strong: { type: 'dialog', speakerKey: speaker('talleyrand'), portraitColor: '#2a2a6a', textKey: answer('ch3', 'talleyrand', 'strong'), next: 'ch3_talleyrand_end' },
+  ch3_talleyrand_a1_peace: { type: 'dialog', speakerKey: speaker('talleyrand'), portraitColor: '#2a2a6a', textKey: answer('ch3', 'talleyrand', 'peace'), next: 'ch3_talleyrand_end' },
+  ch3_talleyrand_a1_divide: { type: 'dialog', speakerKey: speaker('talleyrand'), portraitColor: '#2a2a6a', textKey: answer('ch3', 'talleyrand', 'divide'), next: 'ch3_talleyrand_end' },
+  ch3_talleyrand_end: { type: 'set_flag', flag: 'ch3_talked_talleyrand', value: true, next: 'ch3_check' },
+  ch3_josephine_start: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: line('ch3', 'josephine', 'start'), next: 'ch3_josephine_q1' },
+  ch3_josephine_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch3', 'josephine', 'q1'),
+    choices: [
+      { textKey: choice('ch3', 'josephine', 'law'), impact: { legacy: 15, humanity: 10 }, next: 'ch3_josephine_b1_law' },
+      { textKey: choice('ch3', 'josephine', 'economy'), impact: { humanity: 12, loyalty: 8 }, next: 'ch3_josephine_b1_economy' },
+      { textKey: choice('ch3', 'josephine', 'education'), impact: { legacy: 12, humanity: 10 }, next: 'ch3_josephine_b1_education' },
+    ],
+  },
+  ch3_josephine_b1_law: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: answer('ch3', 'josephine', 'law'), next: 'ch3_josephine_end' },
+  ch3_josephine_b1_economy: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: answer('ch3', 'josephine', 'economy'), next: 'ch3_josephine_end' },
+  ch3_josephine_b1_education: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: answer('ch3', 'josephine', 'education'), next: 'ch3_josephine_end' },
+  ch3_josephine_end: { type: 'set_flag', flag: 'ch3_talked_josephine', value: true, next: 'ch3_check' },
+  ch3_check: { type: 'condition', conditions: [{ hasFlags: ['ch3_talked_talleyrand', 'ch3_talked_josephine'], next: 'ch3_end' }], defaultNext: 'ch3_start' },
+  ch3_end: { type: 'chapter_end', nextChapter: 3 },
+
+  ch4_start: { type: 'explore', interactions: { berthier: 'ch4_berthier_start', soult: 'ch4_soult_start' } },
+  ch4_berthier_start: { type: 'dialog', speakerKey: speaker('berthier'), portraitColor: '#1a3a5c', textKey: line('ch4', 'berthier', 'start'), next: 'ch4_berthier_q1' },
+  ch4_berthier_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch4', 'berthier', 'q1'),
+    choices: [
+      { textKey: choice('ch4', 'berthier', 'center'), impact: { strategy: 15, legacy: 10 }, next: 'ch4_berthier_a1_center' },
+      { textKey: choice('ch4', 'berthier', 'feint'), impact: { strategy: 18, diplomacy: 5 }, next: 'ch4_berthier_a1_feint' },
+      { textKey: choice('ch4', 'berthier', 'safe'), impact: { humanity: 8, strategy: 6 }, next: 'ch4_berthier_a1_safe' },
+    ],
+  },
+  ch4_berthier_a1_center: { type: 'dialog', speakerKey: speaker('berthier'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'berthier', 'center'), next: 'ch4_berthier_end' },
+  ch4_berthier_a1_feint: { type: 'dialog', speakerKey: speaker('berthier'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'berthier', 'feint'), next: 'ch4_berthier_end' },
+  ch4_berthier_a1_safe: { type: 'dialog', speakerKey: speaker('berthier'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'berthier', 'safe'), next: 'ch4_berthier_end' },
+  ch4_berthier_end: { type: 'set_flag', flag: 'ch4_talked_berthier', value: true, next: 'ch4_check' },
+  ch4_soult_start: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: line('ch4', 'soult', 'start'), next: 'ch4_soult_q1' },
+  ch4_soult_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch4', 'soult', 'q1'),
+    choices: [
+      { textKey: choice('ch4', 'soult', 'fast'), impact: { strategy: 12, loyalty: 8 }, next: 'ch4_soult_b1_fast' },
+      { textKey: choice('ch4', 'soult', 'careful'), impact: { humanity: 12, loyalty: 10 }, next: 'ch4_soult_b1_careful' },
+      { textKey: choice('ch4', 'soult', 'split'), impact: { strategy: 14, loyalty: 6 }, next: 'ch4_soult_b1_split' },
+    ],
+  },
+  ch4_soult_b1_fast: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'soult', 'fast'), next: 'ch4_soult_end' },
+  ch4_soult_b1_careful: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'soult', 'careful'), next: 'ch4_soult_end' },
+  ch4_soult_b1_split: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'soult', 'split'), next: 'ch4_soult_end' },
+  ch4_soult_end: { type: 'set_flag', flag: 'ch4_talked_soult', value: true, next: 'ch4_check' },
+  ch4_check: { type: 'condition', conditions: [{ hasFlags: ['ch4_talked_berthier', 'ch4_talked_soult'], next: 'ch4_end' }], defaultNext: 'ch4_start' },
+  ch4_end: { type: 'chapter_end', nextChapter: 4 },
+
+  ch5_start: { type: 'explore', interactions: { murat: 'ch5_murat_start', caulaincourt: 'ch5_caulaincourt_start' } },
+  ch5_murat_start: { type: 'dialog', speakerKey: speaker('murat'), portraitColor: '#8b1a1a', textKey: line('ch5', 'murat', 'start'), next: 'ch5_murat_q1' },
+  ch5_murat_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch5', 'murat', 'q1'),
+    choices: [
+      { textKey: choice('ch5', 'murat', 'retreat'), impact: { humanity: 12, strategy: 8 }, next: 'ch5_murat_a1_retreat' },
+      { textKey: choice('ch5', 'murat', 'wait'), impact: { strategy: 6, legacy: 4 }, next: 'ch5_murat_a1_wait' },
+      { textKey: choice('ch5', 'murat', 'advance'), impact: { strategy: 3, legacy: -5 }, next: 'ch5_murat_a1_advance' },
+    ],
+  },
+  ch5_murat_a1_retreat: { type: 'dialog', speakerKey: speaker('murat'), portraitColor: '#8b1a1a', textKey: answer('ch5', 'murat', 'retreat'), next: 'ch5_murat_end' },
+  ch5_murat_a1_wait: { type: 'dialog', speakerKey: speaker('murat'), portraitColor: '#8b1a1a', textKey: answer('ch5', 'murat', 'wait'), next: 'ch5_murat_end' },
+  ch5_murat_a1_advance: { type: 'dialog', speakerKey: speaker('murat'), portraitColor: '#8b1a1a', textKey: answer('ch5', 'murat', 'advance'), next: 'ch5_murat_end' },
+  ch5_murat_end: { type: 'set_flag', flag: 'ch5_talked_murat', value: true, next: 'ch5_check' },
+  ch5_caulaincourt_start: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: line('ch5', 'caulaincourt', 'start'), next: 'ch5_caulaincourt_q1' },
+  ch5_caulaincourt_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch5', 'caulaincourt', 'q1'),
+    choices: [
+      { textKey: choice('ch5', 'caulaincourt', 'peace'), impact: { diplomacy: 12, humanity: 8 }, next: 'ch5_caulaincourt_b1_peace' },
+      { textKey: choice('ch5', 'caulaincourt', 'hard'), impact: { strategy: 5, diplomacy: -5 }, next: 'ch5_caulaincourt_b1_hard' },
+      { textKey: choice('ch5', 'caulaincourt', 'secret'), impact: { diplomacy: 15, strategy: 8 }, next: 'ch5_caulaincourt_b1_secret' },
+    ],
+  },
+  ch5_caulaincourt_b1_peace: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: answer('ch5', 'caulaincourt', 'peace'), next: 'ch5_caulaincourt_end' },
+  ch5_caulaincourt_b1_hard: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: answer('ch5', 'caulaincourt', 'hard'), next: 'ch5_caulaincourt_end' },
+  ch5_caulaincourt_b1_secret: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: answer('ch5', 'caulaincourt', 'secret'), next: 'ch5_caulaincourt_end' },
+  ch5_caulaincourt_end: { type: 'set_flag', flag: 'ch5_talked_caulaincourt', value: true, next: 'ch5_check' },
+  ch5_check: { type: 'condition', conditions: [{ hasFlags: ['ch5_talked_murat', 'ch5_talked_caulaincourt'], next: 'ch5_end' }], defaultNext: 'ch5_start' },
+  ch5_end: { type: 'chapter_end', nextChapter: 5 },
+
+  ch6_start: { type: 'explore', interactions: { ney: 'ch6_ney_start', grouchy: 'ch6_grouchy_start' } },
+  ch6_ney_start: { type: 'dialog', speakerKey: speaker('ney'), portraitColor: '#1a3a5c', textKey: line('ch6', 'ney', 'start'), next: 'ch6_ney_q1' },
+  ch6_ney_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch6', 'ney', 'q1'),
+    choices: [
+      { textKey: choice('ch6', 'ney', 'guard'), impact: { strategy: 5, loyalty: 8, legacy: -5 }, next: 'ch6_ney_a1_guard' },
+      { textKey: choice('ch6', 'ney', 'retreat'), impact: { humanity: 10, strategy: 8 }, next: 'ch6_ney_a1_retreat' },
+      { textKey: choice('ch6', 'ney', 'wait'), impact: { strategy: 3, loyalty: 6 }, next: 'ch6_ney_a1_wait' },
+    ],
+  },
+  ch6_ney_a1_guard: { type: 'dialog', speakerKey: speaker('ney'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'ney', 'guard'), next: 'ch6_ney_end' },
+  ch6_ney_a1_retreat: { type: 'dialog', speakerKey: speaker('ney'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'ney', 'retreat'), next: 'ch6_ney_end' },
+  ch6_ney_a1_wait: { type: 'dialog', speakerKey: speaker('ney'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'ney', 'wait'), next: 'ch6_ney_end' },
+  ch6_ney_end: { type: 'set_flag', flag: 'ch6_talked_ney', value: true, next: 'ch6_check' },
+  ch6_grouchy_start: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: line('ch6', 'grouchy', 'start'), next: 'ch6_grouchy_q1' },
+  ch6_grouchy_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch6', 'grouchy', 'q1'),
+    choices: [
+      { textKey: choice('ch6', 'grouchy', 'forgive'), impact: { humanity: 15, loyalty: 10 }, next: 'ch6_grouchy_b1_forgive' },
+      { textKey: choice('ch6', 'grouchy', 'blame'), impact: { strategy: 3, loyalty: -5 }, next: 'ch6_grouchy_b1_blame' },
+      { textKey: choice('ch6', 'grouchy', 'analyze'), impact: { strategy: 10, legacy: 8 }, next: 'ch6_grouchy_b1_analyze' },
+    ],
+  },
+  ch6_grouchy_b1_forgive: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'grouchy', 'forgive'), next: 'ch6_grouchy_end' },
+  ch6_grouchy_b1_blame: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'grouchy', 'blame'), next: 'ch6_grouchy_end' },
+  ch6_grouchy_b1_analyze: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'grouchy', 'analyze'), next: 'ch6_grouchy_end' },
+  ch6_grouchy_end: { type: 'set_flag', flag: 'ch6_talked_grouchy', value: true, next: 'ch6_check' },
+  ch6_check: { type: 'condition', conditions: [{ hasFlags: ['ch6_talked_ney', 'ch6_talked_grouchy'], next: 'ch6_end' }], defaultNext: 'ch6_start' },
+  ch6_end: { type: 'chapter_end', nextChapter: 6 },
+
+  ch7_start: { type: 'explore', interactions: { montholon: 'ch7_montholon_start', gourgaud: 'ch7_gourgaud_start' } },
+  ch7_montholon_start: { type: 'dialog', speakerKey: speaker('montholon'), portraitColor: '#5a4a3a', textKey: line('ch7', 'montholon', 'start'), next: 'ch7_montholon_q1' },
+  ch7_montholon_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch7', 'montholon', 'q1'),
+    choices: [
+      { textKey: choice('ch7', 'montholon', 'legacy'), impact: { legacy: 15, humanity: 8 }, next: 'ch7_montholon_a1_legacy' },
+      { textKey: choice('ch7', 'montholon', 'regret'), impact: { humanity: 15, legacy: 8 }, next: 'ch7_montholon_a1_regret' },
+      { textKey: choice('ch7', 'montholon', 'truth'), impact: { legacy: 12, strategy: 8 }, next: 'ch7_montholon_a1_truth' },
+    ],
+  },
+  ch7_montholon_a1_legacy: { type: 'dialog', speakerKey: speaker('montholon'), portraitColor: '#5a4a3a', textKey: answer('ch7', 'montholon', 'legacy'), next: 'ch7_montholon_end' },
+  ch7_montholon_a1_regret: { type: 'dialog', speakerKey: speaker('montholon'), portraitColor: '#5a4a3a', textKey: answer('ch7', 'montholon', 'regret'), next: 'ch7_montholon_end' },
+  ch7_montholon_a1_truth: { type: 'dialog', speakerKey: speaker('montholon'), portraitColor: '#5a4a3a', textKey: answer('ch7', 'montholon', 'truth'), next: 'ch7_montholon_end' },
+  ch7_montholon_end: { type: 'set_flag', flag: 'ch7_talked_montholon', value: true, next: 'ch7_check' },
+  ch7_gourgaud_start: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: line('ch7', 'gourgaud', 'start'), next: 'ch7_gourgaud_q1' },
+  ch7_gourgaud_q1: {
+    type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch7', 'gourgaud', 'q1'),
+    choices: [
+      { textKey: choice('ch7', 'gourgaud', 'peace'), impact: { diplomacy: 15, humanity: 12 }, next: 'ch7_gourgaud_b1_peace' },
+      { textKey: choice('ch7', 'gourgaud', 'fate'), impact: { legacy: 10, strategy: 8 }, next: 'ch7_gourgaud_b1_fate' },
+      { textKey: choice('ch7', 'gourgaud', 'listen'), impact: { loyalty: 15, humanity: 10 }, next: 'ch7_gourgaud_b1_listen' },
+    ],
+  },
+  ch7_gourgaud_b1_peace: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: answer('ch7', 'gourgaud', 'peace'), next: 'ch7_gourgaud_end' },
+  ch7_gourgaud_b1_fate: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: answer('ch7', 'gourgaud', 'fate'), next: 'ch7_gourgaud_end' },
+  ch7_gourgaud_b1_listen: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: answer('ch7', 'gourgaud', 'listen'), next: 'ch7_gourgaud_end' },
+  ch7_gourgaud_end: { type: 'set_flag', flag: 'ch7_talked_gourgaud', value: true, next: 'ch7_check' },
+  ch7_check: { type: 'condition', conditions: [{ hasFlags: ['ch7_talked_montholon', 'ch7_talked_gourgaud'], next: 'ch7_end' }], defaultNext: 'ch7_start' },
+  ch7_end: { type: 'chapter_end', nextChapter: 7 },
 };

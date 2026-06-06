@@ -6,7 +6,6 @@ import { CharacterAnimator } from '../characters/CharacterAnimator.js';
 export class Chapter7Scene {
   constructor() {
     this.id = 'chapter7'; this.index = 6;
-    this.title = '圣赫勒拿岛'; this.year = '1821年';
     this.npcs = []; this.scene = null;
   }
 
@@ -31,13 +30,13 @@ export class Chapter7Scene {
     montholon.position.set(3, 0, -2);
     montholon.rotation.y = -Math.PI / 4;
     scene.add(montholon);
-    this.npcs.push({ mesh: montholon, name: '蒙托隆伯爵', animator: new CharacterAnimator(montholon), dialogueId: 'montholon', interactDist: 2.5 });
+    this.npcs.push({ mesh: montholon, nameKey: 'characters.montholon', animator: new CharacterAnimator(montholon), dialogueId: 'montholon', interactDist: 2.5 });
 
     const gourgaud = buildNPCCharacter({ clothColor: 0x4a5a3a, pantColor: 0x2a3a1a, name: 'gourgaud' });
     gourgaud.position.set(-3, 0, 1.5);
     gourgaud.rotation.y = Math.PI / 3;
     scene.add(gourgaud);
-    this.npcs.push({ mesh: gourgaud, name: '古尔戈将军', animator: new CharacterAnimator(gourgaud), dialogueId: 'gourgaud', interactDist: 2.5 });
+    this.npcs.push({ mesh: gourgaud, nameKey: 'characters.gourgaud', animator: new CharacterAnimator(gourgaud), dialogueId: 'gourgaud', interactDist: 2.5 });
 
     return this.player;
   }
@@ -86,38 +85,6 @@ export class Chapter7Scene {
       leg.position.set(x, 0.2, -2);
       scene.add(leg);
     });
-  }
-
-  getDialogue(dialogueId) {
-    const d = {
-      montholon: [
-        { id: 'start', speaker: '蒙托隆伯爵', text: '陛下，您的回忆录已经记录了数百页。后人将如何评价您的一生？', portraitColor: '#5a4a3a' },
-        { id: 'q1', speaker: '拿破仑', text: '历史会如何审判我？这个问题常常困扰我……', portraitColor: '#1a3a5c',
-          choices: [
-            { text: '我为法兰西和欧洲带来了法律、秩序和现代制度', impact: { legacy: 15, humanity: 8 }, next: 'a1_legacy' },
-            { text: '战争带来了太多痛苦，这是我最深的遗憾', impact: { humanity: 15, legacy: 8 }, next: 'a1_regret' },
-            { text: '历史由胜利者书写，但真相终将大白', impact: { legacy: 12, strategy: 8 }, next: 'a1_truth' },
-          ]
-        },
-        { id: 'a1_legacy', speaker: '蒙托隆伯爵', text: '《拿破仑法典》至今仍是许多国家法律的基础。您的遗产将永存，陛下。', portraitColor: '#5a4a3a' },
-        { id: 'a1_regret', speaker: '蒙托隆伯爵', text: '这份悲悯之心令人动容，陛下。承认错误需要比任何战役都更大的勇气。', portraitColor: '#5a4a3a' },
-        { id: 'a1_truth', speaker: '蒙托隆伯爵', text: '是的，时间是最公正的裁判。两百年后，世人将重新审视您的功过。', portraitColor: '#5a4a3a' },
-      ],
-      gourgaud: [
-        { id: 'start', speaker: '古尔戈将军', text: '陛下，如果时光能够倒流，您会做出哪些不同的选择？', portraitColor: '#4a5a3a' },
-        { id: 'q1', speaker: '拿破仑', text: '……也许我最大的错误是那场俄国远征。还有……与欧洲列强为敌太久了。', portraitColor: '#1a3a5c',
-          choices: [
-            { text: '如果能重来，我会在鼎盛时期选择和平，而非继续扩张', impact: { diplomacy: 15, humanity: 12 }, next: 'b1_peace' },
-            { text: '即使重来，我仍会做同样的选择——这就是命运', impact: { legacy: 10, strategy: 8 }, next: 'b1_fate' },
-            { text: '我希望能更好地倾听身边人的忠告', impact: { loyalty: 15, humanity: 10 }, next: 'b1_listen' },
-          ]
-        },
-        { id: 'b1_peace', speaker: '古尔戈将军', text: '和平的拿破仑……那将是一个不同的世界。也许更美好，也许更平静，陛下。', portraitColor: '#4a5a3a' },
-        { id: 'b1_fate', speaker: '古尔戈将军', text: '命运……您始终相信自己的星宿。即使在这小岛上，那颗星依然闪耀。', portraitColor: '#4a5a3a' },
-        { id: 'b1_listen', speaker: '古尔戈将军', text: '陛下，您终于……说出了我们心中所想。您身边有太多忠诚的人，愿意为您赴死。', portraitColor: '#4a5a3a' },
-      ],
-    };
-    return d[dialogueId] || [];
   }
 
   update(delta) {

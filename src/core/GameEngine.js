@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { InputController } from '../controls/InputController.js';
 import { DialogueSystem } from '../dialogue/DialogueSystem.js';
+import { t } from '../i18n/index.js';
 
 const MOVE_SPEED = 4.5;
 const TURN_SPEED = 2.0;
@@ -214,7 +215,10 @@ export class GameEngine {
     const textEl = document.getElementById('interact-text');
     if (nearest) {
       promptEl?.classList.remove('hidden');
-      if (textEl) textEl.textContent = `与 ${nearest.name} 交谈`;
+      if (textEl) {
+        const name = nearest.nameKey ? t(nearest.nameKey) : nearest.name;
+        textEl.textContent = t('game.interactPrompt', { name });
+      }
       if (this.input.consumeInteract()) this._startDialogue(nearest);
     } else {
       promptEl?.classList.add('hidden');

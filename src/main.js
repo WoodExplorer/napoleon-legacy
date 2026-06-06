@@ -5,8 +5,10 @@ import './style.css';
 import { GameEngine } from './core/GameEngine.js';
 import { gameState } from './core/GameState.js';
 import { MobileJoystick } from './controls/InputController.js';
-import { CHAPTERS } from './ui/ChapterData.js';
+import { CHAPTERS, getChapter } from './ui/ChapterData.js';
 import { renderSummary } from './ui/SummaryUI.js';
+import { applyTranslations } from './i18n/dom.js';
+import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
 import { Chapter1Scene } from './scenes/Chapter1Scene.js';
 import { Chapter2Scene } from './scenes/Chapter2Scene.js';
 import { Chapter3Scene } from './scenes/Chapter3Scene.js';
@@ -34,17 +36,47 @@ const mobileControls = $('mobile-controls');
 
 let engine = null;
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  })[char]);
+}
+
+function syncLocaleButtons() {
+  document.querySelectorAll('[data-locale]').forEach(button => {
+    const active = button.dataset.locale === getLocale();
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+}
+
+function refreshVisibleText() {
+  applyTranslations();
+  syncLocaleButtons();
+  if (!chapterSelect.classList.contains('hidden')) renderChapterSelect();
+  if (!finalSummary.classList.contains('hidden')) renderSummary();
+  if (!gameUI.classList.contains('hidden')) {
+    const ch = getChapter(gameState.currentChapter);
+    $('hud-chapter-num').textContent = ch.number;
+    $('hud-chapter-name').textContent = ch.title;
+  }
+}
+
 // ---- Loading Sequence ----
 function simulateLoading() {
   const bar = $('loading-bar');
   const txt = $('loading-text');
   const steps = [
-    [20, '初始化Three.js渲染引擎...'],
-    [45, '构建历史场景...'],
-    [65, '生成角色模型...'],
-    [80, '加载对话系统...'],
-    [95, '准备就绪...'],
-    [100, '欢迎来到拿破仑的世界！'],
+    [20, t('loading.steps.0')],
+    [45, t('loading.steps.1')],
+    [65, t('loading.steps.2')],
+    [80, t('loading.steps.3')],
+    [95, t('loading.steps.4')],
+    [100, t('loading.steps.5')],
   ];
   let i = 0;
   const tick = () => {
@@ -74,12 +106,13 @@ function renderChapterSelect() {
   list.innerHTML = CHAPTERS.map((ch, i) => {
     const unlocked = isDev || gameState.unlockedChapters.includes(i);
     const done = gameState.getChoicesForChapter(i).length > 0;
+    const localized = getChapter(i);
     return `
       <div class="chapter-card ${unlocked ? '' : 'locked'}" data-idx="${i}">
-        <div class="chapter-num">第${['一','二','三','四','五','六','七'][i]}章</div>
-        <div class="chapter-title">${ch.title}</div>
-        <div class="chapter-year">${ch.year}</div>
-        <div class="chapter-desc">${ch.desc}</div>
+        <div class="chapter-num">${escapeHtml(localized.number)}</div>
+        <div class="chapter-title">${escapeHtml(localized.title)}</div>
+        <div class="chapter-year">${escapeHtml(localized.year)}</div>
+        <div class="chapter-desc">${escapeHtml(localized.desc)}</div>
         <div class="chapter-status">${done ? '✅' : unlocked ? '▶' : '🔒'}</div>
       </div>`;
   }).join('');
@@ -104,8 +137,8 @@ function startChapter(index) {
   pauseMenu.classList.add('hidden');
 
   // Update HUD
-  const ch = CHAPTERS[index];
-  $('hud-chapter-num').textContent = `第${['一','二','三','四','五','六','七'][index]}章`;
+  const ch = getChapter(index);
+  $('hud-chapter-num').textContent = ch.number;
   $('hud-chapter-name').textContent = ch.title;
 
   // Create engine if needed
@@ -162,18 +195,18 @@ function startChapter(index) {
 // ---- Chapter Complete ----
 function showChapterComplete(index) {
   engine.pause();
-  const ch = CHAPTERS[index];
+  const ch = getChapter(index);
   const isLast = index >= CHAPTERS.length - 1;
 
-  $('complete-chapter-name').textContent = `✅ ${ch.title} — 完成`;
+  $('complete-chapter-name').textContent = `✅ ${t('chapterComplete.title', { chapter: ch.title })}`;
   $('complete-summary').textContent = ch.desc;
 
   const choicesEl = $('complete-choices');
   const choices = gameState.getChoicesForChapter(index);
   choicesEl.innerHTML = choices.length
-    ? '<h4 style="color:var(--gold);font-family:var(--font-title);margin-bottom:0.5rem;">您的选择</h4>' +
-      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${c.choiceText}</span></div>`).join('')
-    : '<p style="color:var(--text-secondary);font-size:0.9rem;">本章暂无重要选择记录</p>';
+    ? `<h4 class="choice-record-title">${escapeHtml(t('chapterComplete.choicesTitle'))}</h4>` +
+      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${escapeHtml(c.choiceText)}</span></div>`).join('')
+    : `<p class="choice-record-empty">${escapeHtml(t('chapterComplete.noChoices'))}</p>`;
 
   const nextBtn = $('btn-next-chapter');
   const summaryBtn = $('btn-view-summary');
@@ -286,5 +319,12 @@ $('btn-restart')?.addEventListener('click', () => {
   $('btn-continue')?.classList.add('hidden');
 });
 
+document.querySelectorAll('[data-locale]').forEach(button => {
+  button.addEventListener('click', () => setLocale(button.dataset.locale));
+});
+
+onLocaleChange(refreshVisibleText);
+
 // ---- Boot ----
+refreshVisibleText();
 simulateLoading();

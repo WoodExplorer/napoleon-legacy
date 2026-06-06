@@ -81,6 +81,23 @@ html, body {
   padding: 3rem; max-width: 600px; width: 90%;
   animation: slideUp 0.8s cubic-bezier(0.4,0,0.2,1);
 }
+.locale-switcher {
+  position: absolute; top: 0; right: 0;
+  display: inline-flex; gap: 0.25rem;
+  padding: 0.25rem; border: 1px solid rgba(201,168,76,0.25); border-radius: 8px;
+  background: rgba(5,13,21,0.55); backdrop-filter: blur(8px);
+}
+.locale-btn {
+  min-width: 76px; height: 32px; border: 0; border-radius: 6px; cursor: pointer;
+  background: transparent; color: var(--text-secondary);
+  font-family: var(--font-ui); font-size: 0.72rem; font-weight: 600;
+  transition: var(--transition);
+}
+.locale-btn.active {
+  background: rgba(201,168,76,0.18); color: var(--gold-light);
+  box-shadow: inset 0 0 0 1px rgba(201,168,76,0.32);
+}
+.locale-btn:hover { color: var(--gold-light); }
 .menu-emblem {
   font-size: 4rem; color: var(--gold);
   text-shadow: 0 0 40px rgba(201,168,76,0.7), 0 0 80px rgba(201,168,76,0.3);
@@ -275,6 +292,12 @@ html, body {
 .chapter-complete-content h2 { font-family: var(--font-title); font-size: 1.8rem; color: var(--gold); margin-bottom: 1rem; }
 .chapter-complete-content p { font-family: var(--font-body); color: var(--text-secondary); line-height: 1.7; margin-bottom: 1.5rem; }
 .choice-record { text-align: left; margin-bottom: 1.5rem; }
+.choice-record-title {
+  color: var(--gold); font-family: var(--font-title); margin-bottom: 0.5rem;
+}
+.choice-record-empty {
+  color: var(--text-secondary); font-size: 0.9rem;
+}
 .choice-item { display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
 .choice-item .choice-label { color: var(--gold); flex-shrink: 0; }
 .chapter-complete-content .menu-btn { margin: 0 auto 0.75rem; display: block; }
@@ -335,6 +358,7 @@ html, body {
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
   .menu-title { font-size: 2.2rem; }
+  .locale-switcher { position: static; margin: 0 auto 1rem; width: max-content; }
   #dialogue-box { padding: 1.5rem 1.2rem 2rem; flex-direction: column; }
   .hud-controls-hint { display: none; }
   .chapter-grid { grid-template-columns: 1fr; }
