@@ -344,6 +344,7 @@ export class GameEngine {
                choice.impact
              );
            }
+           pe.applyChoiceEffects(choice);
            pe.advance(choice.next);
            this._updateMissionTracker(true);
         } else {
@@ -638,7 +639,10 @@ export class GameEngine {
 
   _checkInteraction() {
     if (!this.player || !this.currentChapterScene) return;
-    const npcs = this.currentChapterScene.npcs || [];
+    const activeIds = this.plotEngine?.getActiveInteractionIds?.();
+    const allowedIds = Array.isArray(activeIds) ? new Set(activeIds) : null;
+    const npcs = (this.currentChapterScene.npcs || [])
+      .filter(npc => !allowedIds || allowedIds.has(npc.dialogueId));
     const promptState = buildInteractionPromptState(this.player, npcs, t, {
       awarenessDist: INTERACT_AWARENESS_DIST,
       interactDist: INTERACT_DIST,
@@ -844,6 +848,10 @@ export class GameEngine {
       const marker = npc.objectiveMarker;
       if (!marker) return;
       const objective = missionState.objectives.find(item => item.id === npc.dialogueId);
+      if (!objective) {
+        marker.visible = false;
+        return;
+      }
       const done = Boolean(objective?.done);
       const active = objective?.id === activeObjective?.id;
       const color = done ? 0x7fe39b : active ? 0xffd36b : 0xf0cf73;
@@ -865,7 +873,9 @@ export class GameEngine {
 
   _updateMissionTracker(force = false) {
     if (!this.missionUI?.panel || !this.currentChapterScene) return;
-    const missionState = buildMissionState(this.currentChapterScene, this.gameState, t, this.player);
+    const missionState = buildMissionState(this.currentChapterScene, this.gameState, t, this.player, {
+      activeDialogueIds: this.plotEngine?.getActiveInteractionIds?.(),
+    });
     this.currentMissionState = missionState;
     this._updateObjectiveMarkers(missionState);
     this._updateObjectiveCompass(missionState);

@@ -26,11 +26,13 @@ import {
   saveAutoGraphicsEnabled,
   saveGraphicsQuality,
 } from './core/GraphicsSettings.js';
+import { getStoryModeOptions } from './core/StoryMode.js';
 
 // ---- DOM Elements ----
 const $ = id => document.getElementById(id);
 const loadingScreen = $('loading-screen');
 const mainMenu = $('main-menu');
+const storyModeScreen = $('story-mode-screen');
 const chapterSelect = $('chapter-select');
 const gameCanvas = $('game-canvas');
 const gameUI = $('game-ui');
@@ -66,6 +68,7 @@ function syncLocaleButtons() {
 function refreshVisibleText() {
   applyTranslations();
   syncLocaleButtons();
+  if (!storyModeScreen.classList.contains('hidden')) renderStoryModeScreen();
   if (!chapterSelect.classList.contains('hidden')) renderChapterSelect();
   if (!finalSummary.classList.contains('hidden')) renderSummary();
   if (!settingsPanel.classList.contains('hidden')) renderSettingsPanel();
@@ -95,6 +98,10 @@ function getEnhancedSubtitlesEnabled() {
 
 function applyAccessibilityPreferences() {
   document.body.classList.toggle('enhanced-subtitles', getEnhancedSubtitlesEnabled());
+}
+
+function shouldShowMobileControls() {
+  return 'ontouchstart' in window || window.matchMedia?.('(max-width: 600px)').matches;
 }
 
 function renderSettingsPanel() {
@@ -253,6 +260,32 @@ function renderChapterSelect() {
   });
 }
 
+function renderStoryModeScreen() {
+  const list = $('story-mode-options');
+  if (!list) return;
+  const currentMode = gameState.getStoryMode();
+  list.innerHTML = getStoryModeOptions().map(option => `
+    <button
+      type="button"
+      class="story-mode-card ${option.id === currentMode ? 'active' : ''}"
+      data-story-mode="${escapeHtml(option.id)}"
+      aria-pressed="${option.id === currentMode}"
+    >
+      <span class="story-mode-title">${escapeHtml(t(option.labelKey))}</span>
+      <span class="story-mode-desc">${escapeHtml(t(option.descriptionKey))}</span>
+    </button>
+  `).join('');
+
+  list.querySelectorAll('[data-story-mode]').forEach(button => {
+    button.addEventListener('click', () => {
+      gameState.setStoryMode(button.dataset.storyMode);
+      storyModeScreen.classList.add('hidden');
+      chapterSelect.classList.remove('hidden');
+      renderChapterSelect();
+    });
+  });
+}
+
 // ---- Start Chapter ----
 async function ensureEngine() {
   if (engine) return engine;
@@ -321,7 +354,7 @@ async function startChapter(index) {
   showChapterLoading();
 
   // Hide all UI
-  [mainMenu, chapterSelect, finalSummary, aboutScreen].forEach(el => el?.classList.add('hidden'));
+  [mainMenu, storyModeScreen, chapterSelect, finalSummary, aboutScreen].forEach(el => el?.classList.add('hidden'));
   gameCanvas.classList.remove('hidden');
   gameUI.classList.remove('hidden');
   chapterComplete.classList.add('hidden');
@@ -348,9 +381,9 @@ async function startChapter(index) {
     const pe = new PlotEngine(plotData, gameState);
     readyEngine.setPlotEngine(pe, gameState);
 
-    pe.onChapterEnd = () => {
+    pe.onChapterEnd = (nextChapterIndex) => {
       readyEngine.pause();
-      showChapterComplete(index);
+      showChapterComplete(index, nextChapterIndex);
     };
 
     const scene = new SceneClass();
@@ -374,18 +407,19 @@ async function startChapter(index) {
     renderChapterSelect();
   }
 
-  // Show mobile on touch device
-  if ('ontouchstart' in window) {
+  // Show mobile controls on touch devices and narrow responsive viewports.
+  if (shouldShowMobileControls()) {
     mobileControls.classList.remove('hidden');
     $('mobile-interact')?.classList.remove('hidden');
   }
 }
 
 // ---- Chapter Complete ----
-function showChapterComplete(index) {
+function showChapterComplete(index, nextChapterOverride = null) {
   engine.pause();
   const ch = getChapter(index);
-  const isLast = index >= CHAPTERS.length - 1;
+  const nextChapterIndex = Number.isInteger(nextChapterOverride) ? nextChapterOverride : index + 1;
+  const isLast = index >= CHAPTERS.length - 1 || nextChapterIndex >= CHAPTERS.length;
 
   $('complete-chapter-name').textContent = `✅ ${t('chapterComplete.title', { chapter: ch.title })}`;
   $('complete-summary').textContent = ch.desc;
@@ -408,7 +442,7 @@ function showChapterComplete(index) {
     summaryBtn.classList.add('hidden');
     nextBtn.onclick = () => {
       chapterComplete.classList.add('hidden');
-      const next = index + 1;
+      const next = nextChapterIndex;
       gameState.unlockChapter(next);
       gameState.save();
       engine.resume();
@@ -481,8 +515,8 @@ function setupMobileControls() {
 $('btn-new-game')?.addEventListener('click', () => {
   gameState.clear();
   mainMenu.classList.add('hidden');
-  chapterSelect.classList.remove('hidden');
-  renderChapterSelect();
+  storyModeScreen.classList.remove('hidden');
+  renderStoryModeScreen();
 });
 
 $('btn-continue')?.addEventListener('click', () => {
@@ -529,6 +563,11 @@ $('btn-back-from-about')?.addEventListener('click', () => {
 
 $('btn-back-menu')?.addEventListener('click', () => {
   chapterSelect.classList.add('hidden');
+  mainMenu.classList.remove('hidden');
+});
+
+$('btn-back-from-story-mode')?.addEventListener('click', () => {
+  storyModeScreen.classList.add('hidden');
   mainMenu.classList.remove('hidden');
 });
 

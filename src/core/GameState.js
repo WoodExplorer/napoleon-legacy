@@ -1,6 +1,7 @@
+import { DEFAULT_STORY_MODE, normalizeStoryMode } from './StoryMode.js';
+
 /**
- * GameState - 全局游戏状态管理
- * 负责保存玩家选择、章节进度、评分数据
+ * GameState - global campaign state, save data, chapter progress, and scores.
  */
 export class GameState {
   constructor() {
@@ -10,6 +11,7 @@ export class GameState {
   reset() {
     this.currentChapter = 0;
     this.unlockedChapters = [0];
+    this.storyMode = DEFAULT_STORY_MODE;
     this.choices = [];       // { chapter, chapterId, nodeId, choiceText, impact }
     this.flags = {};         // custom plot flags
     this.scores = {
@@ -31,8 +33,25 @@ export class GameState {
     return this.flags[key];
   }
 
+  setStoryMode(mode) {
+    this.storyMode = normalizeStoryMode(mode);
+    return this.storyMode;
+  }
+
+  getStoryMode() {
+    return normalizeStoryMode(this.storyMode);
+  }
+
   recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact) {
-    this.choices.push({ chapterIndex, chapterId, nodeId, choiceText, impact, timestamp: Date.now() });
+    this.choices.push({
+      chapterIndex,
+      chapterId,
+      nodeId,
+      choiceText,
+      impact,
+      storyMode: this.getStoryMode(),
+      timestamp: Date.now(),
+    });
     if (impact) {
       Object.entries(impact).forEach(([key, val]) => {
         if (this.scores[key] !== undefined) {
@@ -69,6 +88,7 @@ export class GameState {
       localStorage.setItem('napoleon_save', JSON.stringify({
         currentChapter: this.currentChapter,
         unlockedChapters: this.unlockedChapters,
+        storyMode: this.getStoryMode(),
         choices: this.choices,
         scores: this.scores,
         flags: this.flags,
@@ -83,6 +103,7 @@ export class GameState {
       const parsed = JSON.parse(data);
       Object.assign(this, parsed);
       if (!this.flags) this.flags = {};
+      this.storyMode = normalizeStoryMode(this.storyMode);
       return true;
     } catch (e) { return false; }
   }

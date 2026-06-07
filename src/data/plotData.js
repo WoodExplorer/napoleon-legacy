@@ -4,7 +4,7 @@ const choice = (chapter, actor, key) => `plot.${chapter}.${actor}.choices.${key}
 const answer = (chapter, actor, key) => `plot.${chapter}.${actor}.answers.${key}`;
 
 export const plotData = {
-  ch1_start: { type: 'explore', interactions: { mother: 'ch1_mother_start', mentor: 'ch1_mentor_start' } },
+  ch1_start: { type: 'explore', interactions: { mother: 'ch1_mother_start', mentor: { next: 'ch1_mentor_start', minMode: 'guided' } } },
   ch1_mother_start: { type: 'dialog', speakerKey: speaker('letizia'), portraitColor: '#8b5e3c', textKey: line('ch1', 'mother', 'start'), next: 'ch1_mother_q1' },
   ch1_mother_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch1', 'mother', 'q1'),
@@ -31,10 +31,17 @@ export const plotData = {
   ch1_mentor_b1_corsica: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: answer('ch1', 'mentor', 'corsica'), next: 'ch1_mentor_end' },
   ch1_mentor_b1_wait: { type: 'dialog', speakerKey: speaker('paoli'), portraitColor: '#4a3a6a', textKey: answer('ch1', 'mentor', 'wait'), next: 'ch1_mentor_end' },
   ch1_mentor_end: { type: 'set_flag', flag: 'ch1_talked_mentor', value: true, next: 'ch1_check' },
-  ch1_check: { type: 'condition', conditions: [{ hasFlags: ['ch1_talked_mother', 'ch1_talked_mentor'], next: 'ch1_end' }], defaultNext: 'ch1_start' },
+  ch1_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch1_talked_mother'], next: 'ch1_end' },
+      { minMode: 'guided', hasFlags: ['ch1_talked_mother', 'ch1_talked_mentor'], next: 'ch1_end' },
+    ],
+    defaultNext: 'ch1_start',
+  },
   ch1_end: { type: 'chapter_end', nextChapter: 1 },
 
-  ch2_start: { type: 'explore', interactions: { general: 'ch2_gen_start', junot: 'ch2_junot_start' } },
+  ch2_start: { type: 'explore', interactions: { general: 'ch2_gen_start', junot: { next: 'ch2_junot_start', minMode: 'guided' } } },
   ch2_gen_start: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: line('ch2', 'general', 'start'), next: 'ch2_gen_q1' },
   ch2_gen_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch2', 'general', 'q1'),
@@ -42,11 +49,13 @@ export const plotData = {
       { textKey: choice('ch2', 'general', 'force'), impact: { strategy: 12, legacy: 8 }, next: 'ch2_gen_a1_force' },
       { textKey: choice('ch2', 'general', 'flank'), impact: { strategy: 8, humanity: 10 }, next: 'ch2_gen_a1_flank' },
       { textKey: choice('ch2', 'general', 'report'), impact: { diplomacy: 10, strategy: 6 }, next: 'ch2_gen_a1_report' },
+      { textKey: choice('ch2', 'general', 'signal'), minMode: 'free', setFlags: { ch2_signal_harbor: true }, impact: { strategy: 14, loyalty: 4 }, next: 'ch2_gen_a1_signal' },
     ],
   },
   ch2_gen_a1_force: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'force'), next: 'ch2_gen_end' },
   ch2_gen_a1_flank: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'flank'), next: 'ch2_gen_end' },
   ch2_gen_a1_report: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'report'), next: 'ch2_gen_end' },
+  ch2_gen_a1_signal: { type: 'dialog', speakerKey: speaker('carteaux'), portraitColor: '#3a5a3a', textKey: answer('ch2', 'general', 'signal'), next: 'ch2_gen_end' },
   ch2_gen_end: { type: 'set_flag', flag: 'ch2_talked_gen', value: true, next: 'ch2_check' },
   ch2_junot_start: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: line('ch2', 'junot', 'start'), next: 'ch2_junot_q1' },
   ch2_junot_q1: {
@@ -61,11 +70,20 @@ export const plotData = {
   ch2_junot_b1_plan: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: answer('ch2', 'junot', 'plan'), next: 'ch2_junot_end' },
   ch2_junot_b1_reward: { type: 'dialog', speakerKey: speaker('junot'), portraitColor: '#2a4a6a', textKey: answer('ch2', 'junot', 'reward'), next: 'ch2_junot_end' },
   ch2_junot_end: { type: 'set_flag', flag: 'ch2_talked_junot', value: true, next: 'ch2_check' },
-  ch2_check: { type: 'condition', conditions: [{ hasFlags: ['ch2_talked_gen', 'ch2_talked_junot'], next: 'ch2_battle_event' }], defaultNext: 'ch2_start' },
+  ch2_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch2_talked_gen'], next: 'ch2_battle_event' },
+      { minMode: 'free', hasFlags: ['ch2_talked_gen', 'ch2_talked_junot', 'ch2_signal_harbor'], minScores: { strategy: 20 }, next: 'ch2_harbor_signal_event' },
+      { minMode: 'guided', hasFlags: ['ch2_talked_gen', 'ch2_talked_junot'], next: 'ch2_battle_event' },
+    ],
+    defaultNext: 'ch2_start',
+  },
+  ch2_harbor_signal_event: { type: 'event', eventName: 'harbor_signal', delay: 800, next: 'ch2_battle_event' },
   ch2_battle_event: { type: 'event', eventName: 'artillery_fire', delay: 2000, next: 'ch2_end' },
   ch2_end: { type: 'chapter_end', nextChapter: 2 },
 
-  ch3_start: { type: 'explore', interactions: { talleyrand: 'ch3_talleyrand_start', josephine: 'ch3_josephine_start' } },
+  ch3_start: { type: 'explore', interactions: { talleyrand: 'ch3_talleyrand_start', josephine: { next: 'ch3_josephine_start', minMode: 'guided' } } },
   ch3_talleyrand_start: { type: 'dialog', speakerKey: speaker('talleyrand'), portraitColor: '#2a2a6a', textKey: line('ch3', 'talleyrand', 'start'), next: 'ch3_talleyrand_q1' },
   ch3_talleyrand_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch3', 'talleyrand', 'q1'),
@@ -92,10 +110,17 @@ export const plotData = {
   ch3_josephine_b1_economy: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: answer('ch3', 'josephine', 'economy'), next: 'ch3_josephine_end' },
   ch3_josephine_b1_education: { type: 'dialog', speakerKey: speaker('josephine'), portraitColor: '#d4748c', textKey: answer('ch3', 'josephine', 'education'), next: 'ch3_josephine_end' },
   ch3_josephine_end: { type: 'set_flag', flag: 'ch3_talked_josephine', value: true, next: 'ch3_check' },
-  ch3_check: { type: 'condition', conditions: [{ hasFlags: ['ch3_talked_talleyrand', 'ch3_talked_josephine'], next: 'ch3_end' }], defaultNext: 'ch3_start' },
+  ch3_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch3_talked_talleyrand'], next: 'ch3_end' },
+      { minMode: 'guided', hasFlags: ['ch3_talked_talleyrand', 'ch3_talked_josephine'], next: 'ch3_end' },
+    ],
+    defaultNext: 'ch3_start',
+  },
   ch3_end: { type: 'chapter_end', nextChapter: 3 },
 
-  ch4_start: { type: 'explore', interactions: { berthier: 'ch4_berthier_start', soult: 'ch4_soult_start' } },
+  ch4_start: { type: 'explore', interactions: { berthier: 'ch4_berthier_start', soult: { next: 'ch4_soult_start', minMode: 'guided' } } },
   ch4_berthier_start: { type: 'dialog', speakerKey: speaker('berthier'), portraitColor: '#1a3a5c', textKey: line('ch4', 'berthier', 'start'), next: 'ch4_berthier_q1' },
   ch4_berthier_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch4', 'berthier', 'q1'),
@@ -122,10 +147,17 @@ export const plotData = {
   ch4_soult_b1_careful: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'soult', 'careful'), next: 'ch4_soult_end' },
   ch4_soult_b1_split: { type: 'dialog', speakerKey: speaker('soult'), portraitColor: '#1a3a5c', textKey: answer('ch4', 'soult', 'split'), next: 'ch4_soult_end' },
   ch4_soult_end: { type: 'set_flag', flag: 'ch4_talked_soult', value: true, next: 'ch4_check' },
-  ch4_check: { type: 'condition', conditions: [{ hasFlags: ['ch4_talked_berthier', 'ch4_talked_soult'], next: 'ch4_end' }], defaultNext: 'ch4_start' },
+  ch4_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch4_talked_berthier'], next: 'ch4_end' },
+      { minMode: 'guided', hasFlags: ['ch4_talked_berthier', 'ch4_talked_soult'], next: 'ch4_end' },
+    ],
+    defaultNext: 'ch4_start',
+  },
   ch4_end: { type: 'chapter_end', nextChapter: 4 },
 
-  ch5_start: { type: 'explore', interactions: { murat: 'ch5_murat_start', caulaincourt: 'ch5_caulaincourt_start' } },
+  ch5_start: { type: 'explore', interactions: { murat: 'ch5_murat_start', caulaincourt: { next: 'ch5_caulaincourt_start', minMode: 'guided' } } },
   ch5_murat_start: { type: 'dialog', speakerKey: speaker('murat'), portraitColor: '#8b1a1a', textKey: line('ch5', 'murat', 'start'), next: 'ch5_murat_q1' },
   ch5_murat_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch5', 'murat', 'q1'),
@@ -152,10 +184,17 @@ export const plotData = {
   ch5_caulaincourt_b1_hard: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: answer('ch5', 'caulaincourt', 'hard'), next: 'ch5_caulaincourt_end' },
   ch5_caulaincourt_b1_secret: { type: 'dialog', speakerKey: speaker('caulaincourt'), portraitColor: '#3a3a5a', textKey: answer('ch5', 'caulaincourt', 'secret'), next: 'ch5_caulaincourt_end' },
   ch5_caulaincourt_end: { type: 'set_flag', flag: 'ch5_talked_caulaincourt', value: true, next: 'ch5_check' },
-  ch5_check: { type: 'condition', conditions: [{ hasFlags: ['ch5_talked_murat', 'ch5_talked_caulaincourt'], next: 'ch5_end' }], defaultNext: 'ch5_start' },
+  ch5_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch5_talked_murat'], next: 'ch5_end' },
+      { minMode: 'guided', hasFlags: ['ch5_talked_murat', 'ch5_talked_caulaincourt'], next: 'ch5_end' },
+    ],
+    defaultNext: 'ch5_start',
+  },
   ch5_end: { type: 'chapter_end', nextChapter: 5 },
 
-  ch6_start: { type: 'explore', interactions: { ney: 'ch6_ney_start', grouchy: 'ch6_grouchy_start' } },
+  ch6_start: { type: 'explore', interactions: { ney: 'ch6_ney_start', grouchy: { next: 'ch6_grouchy_start', minMode: 'guided' } } },
   ch6_ney_start: { type: 'dialog', speakerKey: speaker('ney'), portraitColor: '#1a3a5c', textKey: line('ch6', 'ney', 'start'), next: 'ch6_ney_q1' },
   ch6_ney_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch6', 'ney', 'q1'),
@@ -182,10 +221,17 @@ export const plotData = {
   ch6_grouchy_b1_blame: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'grouchy', 'blame'), next: 'ch6_grouchy_end' },
   ch6_grouchy_b1_analyze: { type: 'dialog', speakerKey: speaker('grouchy'), portraitColor: '#1a3a5c', textKey: answer('ch6', 'grouchy', 'analyze'), next: 'ch6_grouchy_end' },
   ch6_grouchy_end: { type: 'set_flag', flag: 'ch6_talked_grouchy', value: true, next: 'ch6_check' },
-  ch6_check: { type: 'condition', conditions: [{ hasFlags: ['ch6_talked_ney', 'ch6_talked_grouchy'], next: 'ch6_end' }], defaultNext: 'ch6_start' },
+  ch6_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch6_talked_ney'], next: 'ch6_end' },
+      { minMode: 'guided', hasFlags: ['ch6_talked_ney', 'ch6_talked_grouchy'], next: 'ch6_end' },
+    ],
+    defaultNext: 'ch6_start',
+  },
   ch6_end: { type: 'chapter_end', nextChapter: 6 },
 
-  ch7_start: { type: 'explore', interactions: { montholon: 'ch7_montholon_start', gourgaud: 'ch7_gourgaud_start' } },
+  ch7_start: { type: 'explore', interactions: { montholon: 'ch7_montholon_start', gourgaud: { next: 'ch7_gourgaud_start', minMode: 'guided' } } },
   ch7_montholon_start: { type: 'dialog', speakerKey: speaker('montholon'), portraitColor: '#5a4a3a', textKey: line('ch7', 'montholon', 'start'), next: 'ch7_montholon_q1' },
   ch7_montholon_q1: {
     type: 'dialog', speakerKey: speaker('napoleon'), portraitColor: '#1a3a5c', textKey: line('ch7', 'montholon', 'q1'),
@@ -212,6 +258,13 @@ export const plotData = {
   ch7_gourgaud_b1_fate: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: answer('ch7', 'gourgaud', 'fate'), next: 'ch7_gourgaud_end' },
   ch7_gourgaud_b1_listen: { type: 'dialog', speakerKey: speaker('gourgaud'), portraitColor: '#4a5a3a', textKey: answer('ch7', 'gourgaud', 'listen'), next: 'ch7_gourgaud_end' },
   ch7_gourgaud_end: { type: 'set_flag', flag: 'ch7_talked_gourgaud', value: true, next: 'ch7_check' },
-  ch7_check: { type: 'condition', conditions: [{ hasFlags: ['ch7_talked_montholon', 'ch7_talked_gourgaud'], next: 'ch7_end' }], defaultNext: 'ch7_start' },
+  ch7_check: {
+    type: 'condition',
+    conditions: [
+      { maxMode: 'essential', hasFlags: ['ch7_talked_montholon'], next: 'ch7_end' },
+      { minMode: 'guided', hasFlags: ['ch7_talked_montholon', 'ch7_talked_gourgaud'], next: 'ch7_end' },
+    ],
+    defaultNext: 'ch7_start',
+  },
   ch7_end: { type: 'chapter_end', nextChapter: 7 },
 };

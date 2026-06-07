@@ -1,61 +1,65 @@
-# 拿破仑传奇 (Napoleon Legacy)
+# Napoleon's Legacy
 
-这是一款基于 Web 的 3D 互动历史游戏。玩家将扮演拿破仑，在波澜壮阔的历史转折点做出抉择。你的每一个决定都会影响各项数值（战略、外交、忠诚、名留青史、人道关怀），并最终导向不同的历史结局。
+Napoleon's Legacy is a web-based 3D interactive history game. The player guides Napoleon through major historical turning points, makes strategic and personal choices, and shapes scores for strategy, diplomacy, loyalty, legacy, and humanity.
 
-## 🌟 核心特性
+## Core Features
 
-- **动态 3D 场景**: 基于 Three.js，包含起伏地形、粒子氛围、动态水面、飘动旗帜和章节化历史场景。
-- **网状剧情分支**: 由数据驱动 **PlotEngine (剧情引擎)** 支持。从硬编码剧本全面转向图结构（Graph）的数据驱动模式，支持复杂的条件判断、剧情锁、多线分支和循环。
-- **专业多语言资源**: 默认英文，中文通过 `src/i18n/locales/zh-CN.js` 提供；UI、章节和剧情文本使用翻译 key，不直接写在业务代码或剧情图里。
-- **动态场景事件**: 突破纯文本交互，玩家在剧情中的选择可以直接触发 3D 场景中的事件（例如：炮兵开火时的火光闪烁与屏幕震动）。
-- **战役任务导演**: HUD 会实时显示章节目标、完成进度和 NPC 距离，任务面板支持折叠以减少遮挡；场景内 NPC 带有发光目标环与信标，完成后会切换状态。
-- **目标罗盘导航**: HUD 中央会指示最近未完成目标相对镜头的方向、名称和距离，减少玩家在 3D 场景中迷路的摩擦。
-- **交互目标锁定**: NPC 进入感知范围后会先显示靠近提示和距离进度，贴近目标时用小范围容错稳定切换为明确的 `E` 交谈状态。
-- **可探索世界规则**: 每个章节都配置了场景边界、主要建筑/地形/NPC 碰撞体，玩家探索时不会再穿过布景或走出战场。
-- **电影化渲染管线**: 通过 Three.js 后处理合成器和 Bloom 通道增强高光、火光、旗帜与任务信标的视觉反馈。
-- **章节电影化入场**: 章节开始时播放建立镜头、标题层和进度线，再平滑切回可操作第三人称视角。
-- **第三人称镜头系统**: 独立 CameraRig 提供平滑追随、仰视探索、运动 FOV 反馈和基于场景碰撞体的镜头避障，减少穿墙和硬切换感。
-- **对话镜头构图**: 进入 NPC 对话时自动锁定交互焦点，双方转向彼此，并切换到更紧凑的双人对话镜头。
-- **程序化声音导演**: 使用 Web Audio 生成章节环境声、UI 反馈、脚步节奏和场景事件冲击音，并支持游戏内静音切换。
-- **按需加载架构**: 主菜单首包保持轻量，进入章节时才加载 Three.js 游戏引擎、剧情数据和当前章节场景。
-- **更顺手的视角控制**: 支持键盘、鼠标拖拽和滚轮缩放来观察场景，探索时可以明显抬头查看天空方向。
-- **纯原生支持**: 核心逻辑和测试框架均使用原生 JavaScript 构建，极致轻量。
+- **Dynamic 3D chapters**: Three.js scenes with terrain, particles, water, banners, historical props, and chapter-specific atmosphere.
+- **Data-driven narrative graph**: `PlotEngine` runs a node graph from `src/data/plotData.js`, so writers can add branches, conditions, flags, and route gates without rewriting 3D scene code.
+- **Campaign depth modes**: new games can run as Essential Campaign, Main Story + Branches, or Free Exploration. The same plot graph adapts by filtering interactions and choices through data rules.
+- **Localized resources**: English is the default locale. Simplified Chinese is available through `src/i18n/locales/zh-CN.js`. UI, chapter, character, and plot text use translation keys.
+- **Scene events from plot data**: narrative nodes can trigger scene events such as artillery fire or signal chains.
+- **Mission director**: the HUD tracks active objectives, progress, distance to targets, completion state, target markers, and a collapsible campaign-orders panel.
+- **Objective compass**: a centered compass points toward the nearest active objective.
+- **Interaction director**: NPC prompts shift from approach guidance to a stable close-range `E` interaction state.
+- **Navigation constraints**: chapter scenes define world bounds and collision objects so exploration stays inside the playable space.
+- **Cinematic presentation**: chapter intros, dialogue camera framing, third-person camera follow, postprocessing bloom, and runtime graphics presets are all built into the engine.
+- **Procedural audio and music**: Web Audio generates ambience, UI feedback, footsteps, event impacts, and a light composed music layer without external audio assets.
+- **Lazy-loaded architecture**: Three.js, the game engine, plot data, and chapter scenes load only when a chapter starts.
 
-## 📁 目录结构
+## Project Structure
 
 ```text
 src/
-├── core/         # 核心引擎 (GameEngine 3D驱动, PlotEngine 剧情引擎, GameState 状态管理, MovementPhysics 导航约束, CameraRig 第三人称镜头, CinematicDirector 镜头曲线, AudioDirector 声音反馈)
-├── data/         # 数据配置 (plotData.js 存放剧本节点的图数据)
-├── i18n/         # 多语言资源与翻译工具
-├── scenes/       # 3D 场景 (SceneRegistry 按需加载章节场景, 各章节负责场景搭建和事件回调)
-├── dialogue/     # UI 表现层 (DialogueSystem 负责渲染剧情节点的 UI)
-├── characters/   # 角色模型生成
-├── controls/     # 键鼠与移动端触控逻辑
-└── tests/        # 单元测试
+├── core/         # GameEngine, PlotEngine, GameState, camera, audio, graphics, movement, settings
+├── data/         # Plot graph data
+├── i18n/         # Translation resources and localization helpers
+├── scenes/       # Lazy-loaded 3D chapter scenes
+├── dialogue/     # Dialogue UI rendering
+├── characters/   # Procedural character model helpers
+├── controls/     # Keyboard, mouse, and mobile input
+├── ui/           # Mission tracker, compass, chapter metadata, summary UI
+└── tests/        # Native JavaScript unit tests
 ```
 
-## 🛠️ 本地运行与测试
+## Local Development
 
-### 安装依赖
+Install dependencies:
+
 ```bash
 npm install
 ```
 
-### 启动开发服务器
+Start the dev server:
+
 ```bash
 npm run dev
 ```
 
-### 运行单元测试
+Run unit tests:
+
 ```bash
 npm test
 ```
 
-## 📖 文档
+Build for production:
 
-为了方便关卡设计师、编剧或非前端开发人员编写剧情，我们将剧情结构和文本资源从业务代码中剥离了出来。
+```bash
+npm run build
+```
 
-关于如何使用我们的 JSON/JS 对象图结构来编写剧情、添加条件分支和动态事件，请参阅专门的说明文档：
+## Documentation
 
-👉 **[PlotEngine 剧情引擎使用指南](./docs/PlotEngine.md)**
+- [PlotEngine Guide](./docs/PlotEngine.md): how to write and extend narrative graph data.
+- [Narrative Design Notes](./docs/NarrativeDesign.md): recommended content scale, campaign depth modes, and data-first expansion rules.
+- [Handoff Notes](./docs/HANDOFF.md): session bookkeeping, verification history, and suggested next steps.
