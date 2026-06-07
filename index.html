@@ -6,8 +6,8 @@
   <meta name="description" content="" />
   <title></title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/index-CxvfJFQG.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-C7haMG96.css">
+  <script type="module" crossorigin src="./assets/index-2HnwlQOK.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Dr_J-9IG.css">
 </head>
 <body>
   <div id="app">
@@ -47,6 +47,15 @@
         <h2 data-i18n="menu.chapterSelect"></h2>
       </div>
       <div id="chapter-list" class="chapter-grid"></div>
+    </div>
+
+    <div id="story-mode-screen" class="hidden">
+      <div class="chapter-header">
+        <button id="btn-back-from-story-mode" class="back-btn"><span aria-hidden="true">←</span> <span data-i18n="menu.back"></span></button>
+        <h2 data-i18n="storyMode.title"></h2>
+      </div>
+      <p class="story-mode-intro" data-i18n="storyMode.intro"></p>
+      <div id="story-mode-options" class="story-mode-grid"></div>
     </div>
 
     <canvas id="game-canvas" class="hidden"></canvas>
