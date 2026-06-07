@@ -1,11 +1,19 @@
 import { PlotEngine } from '../core/PlotEngine.js';
 import {
   getChapterAmbienceProfile,
+  getChapterMusicProfile,
   getEventSoundProfile,
   getFootstepInterval,
+  getMusicStepFrequency,
   MASTER_VOLUME,
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
+import {
+  DEFAULT_STORY_MODE,
+  getStoryModeOptions,
+  isStoryModeAllowed,
+  normalizeStoryMode,
+} from '../core/StoryMode.js';
 import {
   CAMERA_RIG_DEFAULTS,
   clampCameraDistance,
@@ -142,6 +150,7 @@ class MockGameState {
     this.flags = {};
     this.scores = { strategy: 0, diplomacy: 0, loyalty: 0, legacy: 0, humanity: 0 };
     this.unlockedChapters = [0];
+    this.storyMode = DEFAULT_STORY_MODE;
     this.ending = null;
   }
 
@@ -151,6 +160,15 @@ class MockGameState {
 
   getFlag(key) {
     return this.flags[key];
+  }
+
+  setStoryMode(mode) {
+    this.storyMode = normalizeStoryMode(mode);
+    return this.storyMode;
+  }
+
+  getStoryMode() {
+    return normalizeStoryMode(this.storyMode);
   }
 
   recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact) {
@@ -344,6 +362,73 @@ test('chapter one requires both interactions before ending', () => {
   assertEqual(chapterEnded, true);
 });
 
+console.log('\nStoryMode');
+test('normalizes story modes and checks mode gates', () => {
+  assertEqual(normalizeStoryMode('free'), 'free');
+  assertEqual(normalizeStoryMode('unknown'), DEFAULT_STORY_MODE);
+  assertEqual(getStoryModeOptions().length, 3);
+  assertEqual(isStoryModeAllowed('essential', { maxMode: 'essential' }), true);
+  assertEqual(isStoryModeAllowed('essential', { minMode: 'guided' }), false);
+  assertEqual(isStoryModeAllowed('free', { minMode: 'guided' }), true);
+});
+
+test('filters explore interactions by selected story mode', () => {
+  const state = new MockGameState();
+  state.setStoryMode('essential');
+  const engine = new PlotEngine(plotData, state);
+  engine.start('ch1_start');
+  assertEqual(engine.getActiveInteractionIds().join(','), 'mother');
+  assertEqual(engine.handleInteract('mentor'), false);
+
+  state.setStoryMode('guided');
+  engine.start('ch1_start');
+  assertEqual(engine.getActiveInteractionIds().sort().join(','), 'mentor,mother');
+});
+
+test('allows essential mode to complete a chapter through the critical path only', () => {
+  const state = new MockGameState();
+  state.setStoryMode('essential');
+  const engine = new PlotEngine(plotData, state);
+  let chapterEnded = false;
+  engine.onChapterEnd = () => { chapterEnded = true; };
+  engine.onShowDialog = () => {};
+  engine.onEnterExplore = () => {};
+
+  engine.start('ch1_start');
+  engine.handleInteract('mother');
+  engine.advance(plotData.ch1_mother_start.next);
+  engine.advance(plotData.ch1_mother_q1.choices[0].next);
+  engine.advance(plotData.ch1_mother_a1_study.next);
+  assertEqual(chapterEnded, true);
+});
+
+test('choice effects can unlock later data-driven routes', () => {
+  const state = new MockGameState();
+  state.setStoryMode('free');
+  state.scores.strategy = 20;
+  const engine = new PlotEngine(plotData, state);
+  let node = null;
+  engine.onShowDialog = value => { node = value; };
+  engine.start('ch2_gen_q1');
+  const signalChoice = node.choices.find(item => item.setFlags?.ch2_signal_harbor);
+  assert(signalChoice, 'Expected free-mode signal choice to be available');
+  engine.applyChoiceEffects(signalChoice);
+  assertEqual(state.getFlag('ch2_signal_harbor'), true);
+
+  state.setFlag('ch2_talked_gen', true);
+  state.setFlag('ch2_talked_junot', true);
+  let eventName = null;
+  engine.onTriggerEvent = event => { eventName = event; };
+  const originalSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = () => 1;
+  try {
+    engine.start('ch2_check');
+    assertEqual(eventName, 'harbor_signal');
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+  }
+});
+
 console.log('\nLocalization');
 test('default locale is English', () => {
   setLocale(DEFAULT_LOCALE);
@@ -425,6 +510,21 @@ test('builds mission progress from NPC flags and player distance', () => {
   assertClose(mission.objectives[0].position.x, 3);
   assertClose(mission.objectives[0].position.z, 4);
   assertEqual(mission.objectives[1].done, false);
+});
+
+test('filters mission objectives to currently active plot interactions', () => {
+  const scene = {
+    index: 0,
+    npcs: [
+      { dialogueId: 'mother', name: 'Letizia', mesh: { position: { x: 1, z: 0 } } },
+      { dialogueId: 'mentor', name: 'Paoli', mesh: { position: { x: 2, z: 0 } } },
+    ],
+  };
+  const mission = buildMissionState(scene, new MockGameState(), key => key, null, {
+    activeDialogueIds: ['mother'],
+  });
+  assertEqual(mission.total, 1);
+  assertEqual(mission.objectives[0].id, 'mother');
 });
 
 console.log('\nObjectiveCompass');
@@ -1012,6 +1112,19 @@ test('chapter ambience profiles fall back to the first chapter', () => {
   assertEqual(first.baseHz, fallback.baseHz);
   assert(first.baseHz > 0);
   assert(first.shimmerHz > first.baseHz);
+});
+
+test('chapter music profiles expose playable melodic steps', () => {
+  const profile = getChapterMusicProfile(0);
+  const fallback = getChapterMusicProfile(999);
+  assertEqual(profile.rootHz, fallback.rootHz);
+  assert(profile.tempo > 0);
+  assertEqual(profile.motif.length > 0, true);
+  const first = getMusicStepFrequency(profile, 0);
+  const later = getMusicStepFrequency(profile, 3);
+  assert(first > 0);
+  assert(later > 0);
+  assert(first !== later);
 });
 
 test('footstep interval clamps by speed and blocks when movement is blocked', () => {

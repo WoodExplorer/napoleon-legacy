@@ -145,6 +145,11 @@ html, body {
   background: linear-gradient(180deg, #050d15 0%, #0d1b2a 100%);
   padding: 2rem;
 }
+#story-mode-screen {
+  position: fixed; inset: 0; z-index: 900; overflow-y: auto;
+  background: linear-gradient(180deg, #050d15 0%, #0d1b2a 100%);
+  padding: 2rem;
+}
 .chapter-header {
   display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2.5rem;
   padding-bottom: 1rem; border-bottom: 1px solid var(--glass-border);
@@ -174,6 +179,47 @@ html, body {
 .chapter-year { font-family: var(--font-body); font-size: 0.9rem; color: var(--gold); margin-bottom: 0.75rem; }
 .chapter-desc { font-family: var(--font-body); font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; }
 .chapter-status { position: absolute; top: 1rem; right: 1rem; font-size: 1.2rem; }
+.story-mode-intro {
+  max-width: 760px;
+  margin: -1rem 0 1.5rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.story-mode-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;
+  max-width: 920px;
+}
+.story-mode-card {
+  min-height: 150px;
+  display: grid; gap: 0.75rem; align-content: start;
+  padding: 1.25rem;
+  border: 1px solid rgba(232,201,122,0.24); border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(25,18,16,0.86), rgba(15,35,39,0.74)),
+    rgba(5,13,21,0.68);
+  color: var(--text-primary);
+  cursor: pointer; text-align: left;
+  transition: var(--transition);
+}
+.story-mode-card:hover,
+.story-mode-card.active {
+  border-color: rgba(232,201,122,0.72);
+  box-shadow: 0 14px 42px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+  transform: translateY(-2px);
+}
+.story-mode-title {
+  color: var(--gold-light);
+  font-family: var(--font-title);
+  font-size: 1.05rem;
+}
+.story-mode-desc {
+  color: rgba(240,232,213,0.74);
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
 
 /* ===== Game Canvas ===== */
 #game-canvas { position: fixed; inset: 0; width: 100%!important; height: 100%!important; display: block; }
@@ -658,7 +704,7 @@ body.enhanced-subtitles .dialogue-skip-hint {
   pointer-events: all;
 }
 .interact-btn {
-  bottom: 5rem; right: 2.5rem;
+  bottom: calc(2.5rem + 110px + 1.75rem); right: 3.85rem;
   background: linear-gradient(135deg, var(--gold), var(--gold-dark));
   color: var(--navy); font-size: 1.1rem;
   box-shadow: 0 4px 20px rgba(201,168,76,0.5);
@@ -763,6 +809,14 @@ body.enhanced-subtitles .dialogue-skip-hint {
     top: auto; left: 1rem; right: 1rem; bottom: 5.9rem; width: auto;
   }
   .performance-recommendation-actions { justify-content: flex-end; }
+  .joystick-container { bottom: calc(2rem + env(safe-area-inset-bottom)); }
+  .left-joystick { left: calc(1.25rem + env(safe-area-inset-left)); }
+  .right-joystick { right: calc(1.25rem + env(safe-area-inset-right)); }
+  .joystick-base { width: 104px; height: 104px; }
+  .interact-btn {
+    bottom: calc(2rem + 104px + 1.85rem + env(safe-area-inset-bottom));
+    right: calc(1.25rem + 26px + env(safe-area-inset-right));
+  }
   .cinematic-copy { bottom: 5.4rem; }
   #cinematic-skip { right: 1rem; bottom: 1rem; }
   .chapter-grid { grid-template-columns: 1fr; }

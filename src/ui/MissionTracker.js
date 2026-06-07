@@ -20,8 +20,9 @@ export function formatDistance(distance) {
   return `${Math.max(0, Math.round(distance))}m`;
 }
 
-export function buildMissionState(chapterScene, gameState, translate = key => key, player = null) {
-  const npcs = chapterScene?.npcs || [];
+export function buildMissionState(chapterScene, gameState, translate = key => key, player = null, options = {}) {
+  const allowedIds = Array.isArray(options.activeDialogueIds) ? new Set(options.activeDialogueIds) : null;
+  const npcs = (chapterScene?.npcs || []).filter(npc => !allowedIds || allowedIds.has(npc.dialogueId));
   const objectives = npcs.map(npc => {
     const flag = getObjectiveFlag(chapterScene.index, npc);
     const done = Boolean(gameState?.getFlag?.(flag));

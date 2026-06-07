@@ -26,6 +26,7 @@
 - add dialogue camera framing
 - add interaction target lock prompts
 - latest: add upward camera pitch and collapsible mission panel
+- latest: add campaign depth modes, procedural music, richer plot gates, mobile control spacing, and English docs
 
 ## What Changed
 
@@ -80,6 +81,16 @@
 - Relaxed the exploration camera pitch limit so drag-look can move into a clear upward-viewing angle while dialogue and cinematic camera paths stay authored.
 - Added a localized campaign-orders collapse button with ARIA/title state, compact width, hidden objective list while collapsed, and a clearer performance badge label explaining the FPS/quality shorthand.
 - Updated README and PlotEngine documentation to describe localization and the upgraded scene behavior.
+- Rewrote README and PlotEngine documentation in English and added `docs/NarrativeDesign.md` for content scale, campaign depth, and data-first expansion guidance.
+- Added `src/core/StoryMode.js` with Essential Campaign, Main Story + Branches, and Free Exploration modes.
+- Added a new game campaign-depth selection screen before chapter select, with localized English and Simplified Chinese copy.
+- Extended `PlotEngine` with mode gates, flag gates, score gates, nested boolean gates, choice filtering, interaction filtering, route-object `next` support, and choice-level flag effects.
+- Updated mission tracking, objective markers, and interaction prompts so inactive story-mode branches are hidden from the HUD and cannot be triggered.
+- Updated chapter data so Essential Campaign requires one critical interaction per chapter, Guided requires the curated two-interaction path, and Free Exploration exposes an extra Toulon signal-chain choice.
+- Wired `chapter_end.nextChapter` through the chapter-complete flow so plot data can route to different later scenes.
+- Added procedural composed music profiles to `AudioDirector`; each chapter now has generated melody/bass material layered under ambience without external audio assets.
+- Fixed the mobile `E` interaction button so it sits above the right joystick with measurable spacing, and enabled mobile controls on narrow responsive viewports as well as touch devices.
+- Expanded unit coverage for story modes, plot gates, active-objective filtering, and procedural music profile helpers.
 
 ## Verification
 
@@ -93,6 +104,7 @@ npm run build
 Test result:
 
 - 69 passed / 0 failed
+- Latest run: 75 passed / 0 failed
 
 Browser checks performed at `http://127.0.0.1:5173/`:
 
@@ -127,6 +139,7 @@ Browser checks performed at `http://127.0.0.1:5173/`:
 - All seven chapters were smoke-loaded in the in-app browser; each showed a visible 3D canvas, visible game HUD, two mission objectives, cinematic intro overlay, and no console error/warn entries.
 - Camera rig tests cover upward exploration pitch by verifying the camera can dip below its look target for skyward viewing.
 - Browser verification covered campaign-orders collapse/expand state, hidden objective list while collapsed, localized labels, reduced collapsed width, and performance badge title/ARIA text such as `60 FPS · 均衡画质`.
+- Mobile viewport `390x844` verified the new campaign-depth screen, first chapter load, visible game UI, visible mobile controls, visible mission progress, no page console warnings/errors, and `0px` overlap between the `E` button and right joystick base with about `7px` vertical spacing.
 
 ## Known Notes
 
@@ -145,3 +158,4 @@ npm run dev -- --host 127.0.0.1
 - Add authored per-chapter camera paths and keyframed scene events for the intro director.
 - Replace procedural tones with authored music/SFX assets once an asset pipeline exists.
 - Add accessibility contrast controls to the settings panel.
+- Expand chapter data with larger optional branch packs now that the engine supports mode, flag, score, and nested route gates.

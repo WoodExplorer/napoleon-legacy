@@ -98,7 +98,7 @@ export class DialogueSystem {
     this.choicesEl.classList.remove('hidden');
     if (this.skipHint) this.skipHint.style.display = 'none';
 
-    const letters = ['A', 'B', 'C', 'D'];
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     choices.forEach((choice, i) => {
       const btn = document.createElement('button');
       btn.className = 'choice-btn';

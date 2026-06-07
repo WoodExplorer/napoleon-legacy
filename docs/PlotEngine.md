@@ -1,93 +1,150 @@
-# PlotEngine 剧情引擎使用指南
+# PlotEngine Guide
 
-`PlotEngine` 是游戏的核心剧情执行引擎。它将游戏的剧情从 `GameEngine` 和各个 3D 场景类中剥离，转变为纯粹的数据驱动 (Data-Driven) 模式。
+`PlotEngine` is the game's data-driven narrative runtime. It separates story structure from `GameEngine` and the individual 3D chapter scenes. Writers should be able to change most narrative complexity by editing `src/data/plotData.js` and the locale files under `src/i18n/locales/`.
 
-所有的剧情结构都存放在 `src/data/plotData.js` 文件中。设计人员只需要编写和修改这个文件里的数据节点（Node），就可以创造出复杂的网状剧情结构。
+Player-facing copy should not be hard-coded in the plot graph. Nodes use `speakerKey`, `textKey`, and `choice.textKey`, and the runtime localizes them before the dialogue UI renders.
 
-实际显示给玩家的文本存放在 `src/i18n/locales/*.js`。剧情节点只保存 `speakerKey`、`textKey` 和 `choice.textKey`，由 `PlotEngine` 在运行时本地化。默认语言是英文。
+## Core Model
 
-## 核心概念
+The plot is a graph of named nodes. The engine starts at a node ID, executes that node, then moves to another node through `next`, a player choice, an interaction, or a condition route.
 
-剧情是由一个个相互连接的**节点 (Node)** 构成的图结构。引擎同一时刻只会停留在某个节点上执行对应的行为。行为执行完毕后，引擎会根据节点中的 `next` 或玩家的 `choice`，跳转到下一个节点。
+Node IDs should be globally unique and chapter-prefixed, for example `ch2_gen_q1`.
 
-## 节点类型说明
+## Supported Node Types
 
-目前支持以下 6 种类型的节点，通过 `type` 字段区分：
+### `explore`
 
-### 1. 探索节点 (`explore`)
-让游戏进入 3D 探索模式，允许玩家控制角色移动。当玩家靠近特定 NPC 并按下交互键时，跳转到对应的对话节点。
-```javascript
-"ch2_start": {
-  type: "explore",
+Enters 3D exploration mode. When the player interacts with an NPC, the `interactions` map routes that NPC's `dialogueId` to another node.
+
+```js
+ch2_start: {
+  type: 'explore',
   interactions: {
-    "general": "ch2_gen_start", // 交互对应 NPC ID 时，跳转的目标节点
-    "junot": "ch2_junot_start"
-  }
+    general: 'ch2_gen_start',
+    junot: { next: 'ch2_junot_start', minMode: 'guided' },
+  },
 }
 ```
 
-### 2. 对话节点 (`dialog`)
-弹出 UI 对话框。可以只包含文本（点击后进入下一节点），也可以包含选项（点击选项后跳转到对应节点并结算数值影响）。
-```javascript
-"ch2_gen_q1": {
-  type: "dialog", 
-  speakerKey: "characters.napoleon", 
-  portraitColor: "#1a3a5c", 
-  textKey: "plot.ch2.general.q1",
+Interaction values can be a string node ID or a gated route object. Gated interactions are also used by the mission tracker and objective markers, so inactive branches are hidden from the HUD.
+
+### `dialog`
+
+Shows a dialogue line. A node may have no choices and advance through `next`, or it may show a list of choices.
+
+```js
+ch2_gen_q1: {
+  type: 'dialog',
+  speakerKey: 'characters.napoleon',
+  portraitColor: '#1a3a5c',
+  textKey: 'plot.ch2.general.q1',
   choices: [
-    { textKey: "plot.ch2.general.choices.force", impact: { strategy: 12 }, next: "ch2_gen_a1_force" },
-    { textKey: "plot.ch2.general.choices.flank", impact: { humanity: 10 }, next: "ch2_gen_a1_flank" }
-  ]
-}
-```
-
-### 3. 设置标记 (`set_flag`)
-用于记录玩家的足迹，比如记录玩家是否已经和某人说过话。这对控制剧情进度至关重要。
-```javascript
-"ch2_gen_end": { 
-  type: "set_flag", 
-  flag: "talked_gen", // 标记名称
-  value: true,        // 赋予的值
-  next: "ch2_check"   // 执行完毕后立刻跳转
-}
-```
-
-### 4. 条件判断 (`condition`)
-根据当前的剧情标记，决定接下来的路线（If-Else 结构）。
-```javascript
-"ch2_check": {
-  type: "condition",
-  conditions: [
-    // 如果下面这两个 Flag 都为 true，则跳转到 ch2_battle_event
-    { hasFlags: ["talked_gen", "talked_junot"], next: "ch2_battle_event" }
+    {
+      textKey: 'plot.ch2.general.choices.force',
+      impact: { strategy: 12, legacy: 8 },
+      next: 'ch2_gen_a1_force',
+    },
   ],
-  defaultNext: "ch2_start" // 如果都不满足，默认跳转回探索模式
 }
 ```
 
-### 5. 场景事件 (`event`)
-触发 3D 场景中的特殊效果（例如炮击、震屏、增援出现）。
-触发事件后，会自动调用对应章节 `ChapterXScene.js` 里的 `handleEvent(eventName)` 函数。
-```javascript
-"ch2_battle_event": { 
-  type: "event", 
-  eventName: "artillery_fire", 
-  next: "ch2_end" 
+Choices can include the same gates as condition routes. They can also set or unset flags:
+
+```js
+{
+  textKey: 'plot.ch2.general.choices.signal',
+  minMode: 'free',
+  setFlags: { ch2_signal_harbor: true },
+  impact: { strategy: 14, loyalty: 4 },
+  next: 'ch2_gen_a1_signal',
 }
 ```
 
-### 6. 章节结束 (`chapter_end`)
-告诉主引擎本章节的剧情网络已到达终点，可以播放章节结算动画，并准备加载下一个 3D 场景了。
-```javascript
-"ch2_end": { 
-  type: "chapter_end", 
-  nextChapter: 2 // 接下来要跳转的章节 index
+### `set_flag`
+
+Sets a plot flag and immediately advances.
+
+```js
+ch2_gen_end: {
+  type: 'set_flag',
+  flag: 'ch2_talked_gen',
+  value: true,
+  next: 'ch2_check',
 }
 ```
 
-## 设计与调试建议
+### `condition`
 
-1. **闭环设计**：当你设计一个循环时（例如和多个NPC说话才能触发后续），确保 `defaultNext` 总是能安全地回到一个 `explore` 节点，否则游戏会卡死。
-2. **唯一命名**：给每个节点一个具有描述性的全局唯一 ID，建议带上章节前缀（例如 `ch3_start`, `ch3_npc_talk`）。
-3. **文本资源**：新增剧情时，同步补齐 `src/i18n/locales/en.js` 和 `src/i18n/locales/zh-CN.js` 的翻译 key。
-4. **单元测试**：如果你添加了复杂的网状循环结构，可以在 `src/tests/game.test.js` 中添加针对你这个新剧情片段的逻辑连通性测试。
+Selects a route based on flags, scores, story mode, and nested boolean logic.
+
+```js
+ch2_check: {
+  type: 'condition',
+  conditions: [
+    {
+      minMode: 'free',
+      hasFlags: ['ch2_talked_gen', 'ch2_talked_junot', 'ch2_signal_harbor'],
+      minScores: { strategy: 20 },
+      next: 'ch2_harbor_signal_event',
+    },
+    {
+      minMode: 'guided',
+      hasFlags: ['ch2_talked_gen', 'ch2_talked_junot'],
+      next: 'ch2_battle_event',
+    },
+  ],
+  defaultNext: 'ch2_start',
+}
+```
+
+Supported gates:
+
+- `mode`, `storyModes`, `minMode`, `maxMode`
+- `hasFlags`, `anyFlags`, `lacksFlags`, `unlessFlags`
+- `flagValues`
+- `minScores`, `maxScores`
+- `allOf`, `anyOf`, `not`
+
+### `event`
+
+Triggers a 3D scene/audio event, then advances. If `delay` is set, the engine waits before advancing.
+
+```js
+ch2_battle_event: {
+  type: 'event',
+  eventName: 'artillery_fire',
+  delay: 2000,
+  next: 'ch2_end',
+}
+```
+
+The active scene may implement `handleEvent(eventName)` to render visual feedback.
+
+### `chapter_end`
+
+Ends the chapter. `nextChapter` is a zero-based chapter index. Because this value is data-driven, a route can send the player to different later scenes.
+
+```js
+ch2_end: {
+  type: 'chapter_end',
+  nextChapter: 2,
+}
+```
+
+## Campaign Depth Modes
+
+New games can choose one of three modes:
+
+- `essential`: only critical-path interactions are active.
+- `guided`: main story plus curated branch content. This is the default.
+- `free`: widest branch set, including optional or condition-gated choices.
+
+Use `minMode` and `maxMode` on interactions, choices, or condition routes. For example, a side NPC can be hidden in Essential Campaign with `minMode: 'guided'`, while a high-consequence optional choice can require `minMode: 'free'`.
+
+## Authoring Rules
+
+1. Keep the engine generic. Add new story complexity as graph data first.
+2. Add scene code only for reusable visual events, new environments, or new NPC placements.
+3. Keep every loop safe. A `condition` node should have a `defaultNext` that returns to an `explore` node or another valid recovery path.
+4. Add matching English and Simplified Chinese translation keys for every new `speakerKey`, `textKey`, and `choice.textKey`.
+5. Add tests when a branch uses score gates, story-mode gates, nested conditions, or non-linear chapter routing.

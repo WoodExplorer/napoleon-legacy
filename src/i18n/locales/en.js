@@ -33,6 +33,22 @@ export const en = {
     back: 'Back',
     chapterSelect: 'Select Chapter',
   },
+  storyMode: {
+    title: 'Choose Campaign Depth',
+    intro: 'Pick how much of the narrative web you want active. The engine uses the same plot graph either way, so future chapters can grow by editing data rather than rewriting scene code.',
+    essential: {
+      title: 'Essential Campaign',
+      desc: 'Follow only the critical path and finish chapters quickly.',
+    },
+    guided: {
+      title: 'Main Story + Branches',
+      desc: 'Play the main arc with a curated set of character branches. Recommended for the first run.',
+    },
+    free: {
+      title: 'Free Exploration',
+      desc: 'Expose the widest branch set, including optional routes, gated choices, and deeper consequences.',
+    },
+  },
   hud: {
     move: 'Arrows Move',
     camera: 'WASD / Drag Camera',
@@ -237,11 +253,13 @@ export const en = {
           force: 'Ask for full support and mass every gun for an assault on the heights.',
           flank: 'Propose a flanking plan to avoid a costly frontal attack.',
           report: 'Bypass the general and request more resources from the government.',
+          signal: 'Coordinate a hidden signal chain with the harbor batteries before the main attack.',
         },
         answers: {
           force: 'Very well. I approve your plan. But if it fails, the consequences are yours. Prepare the attack, Bonaparte.',
           flank: 'A flanking move? It will take time, but fewer casualties are worth it. You are steadier than I expected, Captain.',
           report: 'You dare report over my head. And yet, I must admit, you know how to use politics.',
+          signal: 'A signal chain? Risky, but it could make the fleet believe the whole harbor is turning against it. Set it in motion.',
         },
       },
       junot: {
