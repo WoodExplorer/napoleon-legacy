@@ -4,6 +4,13 @@
 
 `codex/i18n-web3d-upgrade`
 
+## GitHub Pages
+
+- Repository: `https://github.com/WoodExplorer/napoleon-legacy.git`
+- Deployment uses the existing `.github/workflows/deploy.yml` workflow.
+- Pushes to `main` run tests, build the Vite app, and publish `dist/` to the `gh-pages` branch with `peaceiris/actions-gh-pages`.
+- Do not hand-edit `gh-pages` unless the workflow is unavailable; prefer pushing a verified `main` commit and letting the workflow deploy.
+
 ## Commits
 
 - `e1eb512 Add localized narrative resources`
