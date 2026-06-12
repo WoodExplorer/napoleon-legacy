@@ -676,6 +676,9 @@ body.enhanced-subtitles .dialogue-skip-hint {
 
 /* ===== Mobile Controls ===== */
 #mobile-controls { position: absolute; inset: 0; pointer-events: none; }
+/* Hidden while the player can't be controlled (dialogue, pause, cinematic) so
+   the joysticks and E button never overlap the dialogue box. */
+#mobile-controls.controls-suppressed { display: none; }
 .joystick-container { position: absolute; bottom: 2.5rem; pointer-events: all; text-align: center; }
 .left-joystick { left: 2rem; }
 .right-joystick { right: 2rem; }
@@ -801,12 +804,19 @@ body.enhanced-subtitles .dialogue-skip-hint {
   .objective-compass-track { width: 210px; }
   #objective-compass-name { max-width: 126px; }
   #mission-panel { top: 8rem; right: 1rem; left: 1rem; width: auto; }
+  /* Clearance above the bottom control cluster: joystick offset (2rem) +
+     joystick base (104px) + gap (1.85rem) + interact button (52px) + breathing
+     room, plus the safe-area inset. Keeps bottom toasts off the joysticks. */
+  #game-ui {
+    --controls-clearance: calc(2rem + 104px + 1.85rem + 52px + 0.85rem + env(safe-area-inset-bottom));
+  }
   .performance-recommendation {
-    top: auto; left: 1rem; right: 1rem; bottom: 1rem; width: auto;
+    top: auto; left: 1rem; right: 1rem; bottom: var(--controls-clearance); width: auto;
     grid-template-columns: 1fr; gap: 0.65rem;
   }
   .quality-adjustment-toast {
-    top: auto; left: 1rem; right: 1rem; bottom: 5.9rem; width: auto;
+    top: auto; left: 1rem; right: 1rem;
+    bottom: calc(var(--controls-clearance) + 4.9rem); width: auto;
   }
   .performance-recommendation-actions { justify-content: flex-end; }
   .joystick-container { bottom: calc(2rem + env(safe-area-inset-bottom)); }

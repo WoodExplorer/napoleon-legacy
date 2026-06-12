@@ -30,10 +30,11 @@ export class InputController {
   get turnRight() {
     return this.keys['ArrowRight'] || this.moveVector.x > 0.3;
   }
-  get camLeft()  { return this.keys['KeyA'] || this.lookVector.x < -0.3; }
-  get camRight() { return this.keys['KeyD'] || this.lookVector.x > 0.3; }
-  get camUp()    { return this.keys['KeyW'] && !this.forward ? false : this.lookVector.y < -0.3; }
-  get camDown()  { return this.lookVector.y > 0.3; }
+  // Keyboard-only camera turn. The mobile look stick (lookVector) is applied
+  // separately in GameEngine._handleCamera, so it must NOT be mixed in here or
+  // the right stick's rotation would be counted twice.
+  get camLeft()  { return this.keys['KeyA']; }
+  get camRight() { return this.keys['KeyD']; }
   get escape()   { return this.keys['Escape']; }
 
   consumeInteract() {
@@ -52,17 +53,27 @@ export class MobileJoystick {
     this.thumb = thumbEl;
     this.onChange = onChange;
     this.active = false;
-    this.startX = 0;
-    this.startY = 0;
+    this.touchId = null;   // identifier of the finger that owns this stick
     this.radius = 40;
     this._bind();
   }
 
+  // Find this stick's tracked finger inside a TouchList (it may not be index 0
+  // when both joysticks are held at once).
+  _findTouch(touchList) {
+    for (let i = 0; i < touchList.length; i++) {
+      if (touchList[i].identifier === this.touchId) return touchList[i];
+    }
+    return null;
+  }
+
   _bind() {
     this.base.addEventListener('touchstart', e => {
+      if (this.active) return;            // already tracking a finger
       e.preventDefault();
+      const t = e.changedTouches[0];
       this.active = true;
-      const t = e.touches[0];
+      this.touchId = t.identifier;
       const rect = this.base.getBoundingClientRect();
       this.centerX = rect.left + rect.width / 2;
       this.centerY = rect.top + rect.height / 2;
@@ -71,17 +82,21 @@ export class MobileJoystick {
 
     window.addEventListener('touchmove', e => {
       if (!this.active) return;
+      const t = this._findTouch(e.touches);
+      if (!t) return;                     // this stick's finger didn't move
       e.preventDefault();
-      const t = e.touches[0];
       this._update(t.clientX, t.clientY);
     }, { passive: false });
 
-    window.addEventListener('touchend', () => {
-      if (!this.active) return;
+    const release = e => {
+      if (!this.active || !this._findTouch(e.changedTouches)) return;
       this.active = false;
+      this.touchId = null;
       this.thumb.style.transform = 'translate(-50%, -50%)';
       this.onChange(0, 0);
-    });
+    };
+    window.addEventListener('touchend', release);
+    window.addEventListener('touchcancel', release);
   }
 
   _update(cx, cy) {

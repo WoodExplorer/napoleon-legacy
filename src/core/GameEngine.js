@@ -95,6 +95,7 @@ export class GameEngine {
     this.graphicsPreset = getGraphicsPreset(this.graphicsQuality);
     this.cinematicIntro = null;
     this._missionSyncTimer = 0;
+    this._mobileControlsSuppressed = false;
     this._movementBlocked = false;
     this._isMoving = false;
     this._rafId = null;
@@ -442,6 +443,7 @@ export class GameEngine {
     }
 
     const canControlPlayer = !this.isPaused && !this.inDialogue && !this.cinematicIntro;
+    this._setMobileControlsSuppressed(!canControlPlayer);
     if (canControlPlayer) {
       this._handleMovement(delta);
       this._handleCamera(delta);
@@ -677,6 +679,21 @@ export class GameEngine {
     promptEl?.classList.remove('ready');
     promptEl?.style.setProperty('--interact-progress', '0%');
     if (options.consumeInteract) this.input.consumeInteract();
+  }
+
+  // Hide the on-screen joysticks/interact button while the player can't be
+  // controlled (dialogue, pause, cinematic) so they never overlap the dialogue
+  // box. Also neutralizes any held-stick input so the character can't keep
+  // drifting once the controls disappear from under a resting finger.
+  _setMobileControlsSuppressed(suppressed) {
+    if (suppressed === this._mobileControlsSuppressed) return;
+    this._mobileControlsSuppressed = suppressed;
+    const controls = document.getElementById('mobile-controls');
+    controls?.classList.toggle('controls-suppressed', suppressed);
+    if (suppressed) {
+      this.input.moveVector = { x: 0, y: 0 };
+      this.input.lookVector = { x: 0, y: 0 };
+    }
   }
 
   _syncAudioControls() {
