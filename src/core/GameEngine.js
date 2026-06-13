@@ -25,13 +25,16 @@ import {
   saveGraphicsQuality,
 } from './GraphicsSettings.js';
 import { buildInteractionPromptState } from './InteractionDirector.js';
-import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation } from './MovementPhysics.js';
+import { DEFAULT_PLAYER_RADIUS, resolvePlayerNavigation, computeCameraRelativeMovement } from './MovementPhysics.js';
 import { FrameRateSampler } from './PerformanceMonitor.js';
 import { buildObjectiveCompassState } from '../ui/ObjectiveCompass.js';
 import { buildMissionState } from '../ui/MissionTracker.js';
 
 const MOVE_SPEED = 4.5;
 const TURN_SPEED = 2.0;
+// How fast the body swings to face the move-stick heading (rad/s). High enough
+// to feel responsive, low enough to read as a turn rather than a snap.
+const STICK_TURN_RATE = 14;
 const CAM_SPEED = 1.8;
 const INTERACT_DIST = 2.5;
 const INTERACT_AWARENESS_DIST = 6.5;
@@ -525,11 +528,17 @@ export class GameEngine {
   _handleMovement(delta) {
     if (!this.player) return;
     const inp = this.input;
+    const anim = this.currentChapterScene?.playerAnimator;
+
+    if (inp.moveStickActive) {
+      this._handleStickMovement(delta);
+      this._updateCameraTarget();
+      return;
+    }
 
     if (inp.turnLeft) this.player.rotation.y += TURN_SPEED * delta;
     if (inp.turnRight) this.player.rotation.y -= TURN_SPEED * delta;
 
-    const anim = this.currentChapterScene?.playerAnimator;
     if (inp.forward || inp.backward) {
       const dir = inp.forward ? 1 : -1;
       const startX = this.player.position.x;
@@ -550,6 +559,38 @@ export class GameEngine {
     }
 
     this._updateCameraTarget();
+  }
+
+  // Camera-relative analog movement (mobile move stick). The character walks in
+  // the direction pushed *on screen* and turns to face its travel. The camera's
+  // world yaw is (player.rotation.y + camYaw), so we counter-rotate camYaw by the
+  // body's turn to keep the camera planted in world space instead of orbiting.
+  _handleStickMovement(delta) {
+    const anim = this.currentChapterScene?.playerAnimator;
+    const worldYaw = this.player.rotation.y + this.camYaw;
+    const result = computeCameraRelativeMovement(this.input.moveVector, {
+      worldYaw,
+      playerYaw: this.player.rotation.y,
+      speed: MOVE_SPEED,
+      delta,
+      turnRate: STICK_TURN_RATE,
+    });
+
+    this.player.rotation.y = result.playerYaw;
+    this.camYaw += result.camYawDelta;
+
+    const startX = this.player.position.x;
+    const startZ = this.player.position.z;
+    const next = this._resolvePlayerNavigation(
+      this.player.position.x + result.dx,
+      this.player.position.z + result.dz
+    );
+    this.player.position.x = next.x;
+    this.player.position.z = next.z;
+    this._movementBlocked = next.blocked;
+    const movedSq = (next.x - startX) ** 2 + (next.z - startZ) ** 2;
+    this._isMoving = movedSq > 0.00001;
+    if (anim) anim.setState(this._isMoving ? 'walk' : 'idle');
   }
 
   _resolvePlayerNavigation(x, z) {

@@ -18,17 +18,25 @@ export class InputController {
     window.addEventListener('keyup', e => { this.keys[e.code] = false; });
   }
 
+  // Keyboard-only movement intent. The mobile move stick (moveVector) drives a
+  // separate camera-relative path in GameEngine._handleMovement, so it must NOT
+  // be folded in here or the two schemes would fight.
   get forward() {
-    return this.keys['ArrowUp'] || this.keys['KeyW'] || this.moveVector.y < -0.3;
+    return this.keys['ArrowUp'] || this.keys['KeyW'];
   }
   get backward() {
-    return this.keys['ArrowDown'] || this.keys['KeyS'] || this.moveVector.y > 0.3;
+    return this.keys['ArrowDown'] || this.keys['KeyS'];
   }
   get turnLeft() {
-    return this.keys['ArrowLeft'] || this.moveVector.x < -0.3;
+    return this.keys['ArrowLeft'];
   }
   get turnRight() {
-    return this.keys['ArrowRight'] || this.moveVector.x > 0.3;
+    return this.keys['ArrowRight'];
+  }
+  // True while the analog move stick is pushed past its deadzone.
+  get moveStickActive() {
+    const v = this.moveVector;
+    return Math.sqrt(v.x * v.x + v.y * v.y) >= 0.18;
   }
   // Keyboard-only camera turn. The mobile look stick (lookVector) is applied
   // separately in GameEngine._handleCamera, so it must NOT be mixed in here or

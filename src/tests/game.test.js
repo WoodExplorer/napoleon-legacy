@@ -69,9 +69,12 @@ import {
 } from '../core/InteractionDirector.js';
 import {
   clampToBounds,
+  computeCameraRelativeMovement,
   resolveBoxCollision,
   resolveCircleCollision,
   resolvePlayerNavigation,
+  rotateToward,
+  shortestAngleDelta,
 } from '../core/MovementPhysics.js';
 import {
   formatFps,
@@ -713,6 +716,67 @@ test('resolves combined bounds and obstacle navigation', () => {
   assertEqual(result.blocked, true);
   assertClose(result.x, 3.25);
   assertClose(result.z, 0);
+});
+
+test('shortestAngleDelta takes the short way around the circle', () => {
+  assertClose(shortestAngleDelta(0, Math.PI / 2), Math.PI / 2);
+  assertClose(shortestAngleDelta(0, -Math.PI / 2), -Math.PI / 2);
+  // 3 -> -3 is +0.283 the short way, not -6 the long way.
+  assertClose(shortestAngleDelta(3, -3), 2 * Math.PI - 6);
+});
+
+test('rotateToward clamps to maxStep but snaps when within reach', () => {
+  assertClose(rotateToward(0, Math.PI, 0.1), 0.1);
+  assertClose(rotateToward(0, -Math.PI / 2, 0.1), -0.1);
+  assertClose(rotateToward(0, Math.PI / 4, 10), Math.PI / 4);
+});
+
+test('stick movement ignores input inside the deadzone', () => {
+  const result = computeCameraRelativeMovement(
+    { x: 0.1, y: -0.1 },
+    { worldYaw: 0, playerYaw: 0, speed: 4, delta: 0.1, turnRate: 100 }
+  );
+  assertEqual(result.moving, false);
+  assertClose(result.dx, 0);
+  assertClose(result.dz, 0);
+  assertClose(result.camYawDelta, 0);
+});
+
+test('pushing the stick up walks into the screen (away from camera)', () => {
+  const result = computeCameraRelativeMovement(
+    { x: 0, y: -1 },
+    { worldYaw: 0, playerYaw: 0, speed: 4, delta: 0.1, turnRate: 100 }
+  );
+  assertEqual(result.moving, true);
+  assertClose(result.dx, 0);
+  assertClose(result.dz, 0.4);
+  assertClose(result.playerYaw, 0);
+});
+
+test('pushing the stick right walks along the camera right axis', () => {
+  const result = computeCameraRelativeMovement(
+    { x: 1, y: 0 },
+    { worldYaw: 0, playerYaw: 0, speed: 4, delta: 0.1, turnRate: 100 }
+  );
+  // Camera right vector at worldYaw 0 is (-1, 0), so screen-right is -x.
+  assertClose(result.dx, -0.4);
+  assertClose(result.dz, 0);
+  assertClose(result.playerYaw, -Math.PI / 2);
+});
+
+test('auto-facing counter-rotates camYaw so the camera stays put', () => {
+  const worldYaw = 0;
+  const playerYaw = Math.PI / 2;
+  const camYaw = worldYaw - playerYaw; // engine invariant: worldYaw = playerYaw + camYaw
+  const result = computeCameraRelativeMovement(
+    { x: 0, y: -1 },
+    { worldYaw, playerYaw, speed: 4, delta: 0.1, turnRate: 100 }
+  );
+  // Body snapped to face into the screen...
+  assertClose(result.playerYaw, 0);
+  // ...and the camera's world yaw is unchanged.
+  const newWorldYaw = result.playerYaw + (camYaw + result.camYawDelta);
+  assertClose(newWorldYaw, worldYaw);
 });
 
 console.log('\nSceneRegistry');
