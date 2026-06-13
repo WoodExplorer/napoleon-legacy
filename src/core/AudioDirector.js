@@ -1,15 +1,5 @@
 export const MASTER_VOLUME = 0.42;
 
-const CHAPTER_AMBIENCE = [
-  { baseHz: 92, shimmerHz: 184, color: 'warm' },
-  { baseHz: 68, shimmerHz: 136, color: 'siege' },
-  { baseHz: 110, shimmerHz: 220, color: 'court' },
-  { baseHz: 74, shimmerHz: 148, color: 'battle' },
-  { baseHz: 54, shimmerHz: 108, color: 'winter' },
-  { baseHz: 58, shimmerHz: 116, color: 'dusk' },
-  { baseHz: 88, shimmerHz: 176, color: 'island' },
-];
-
 const CHAPTER_MUSIC = [
   { rootHz: 220, tempo: 72, mode: [0, 3, 5, 7, 10], motif: [0, 2, 3, 2, 4, 3, 1, 0], bass: [0, -2, -4, -2], chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 0, 2]], percussion: 'warm', tone: { lead: 'triangle', pad: 'sine', reverb: 3.2 } },
   { rootHz: 196, tempo: 88, mode: [0, 2, 3, 7, 10], motif: [0, 3, 4, 3, 2, 4, 1, 0], bass: [0, -5, -3, -2], chords: [[0, 2, 4], [4, 0, 2], [3, 0, 2], [0, 2, 4]], percussion: 'march', tone: { lead: 'sawtooth', pad: 'triangle', reverb: 2.2 } },
@@ -32,10 +22,6 @@ const PERCUSSION_FEEL = {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
-}
-
-export function getChapterAmbienceProfile(index) {
-  return CHAPTER_AMBIENCE[index] || CHAPTER_AMBIENCE[0];
 }
 
 export function getChapterMusicProfile(index) {
@@ -99,7 +85,6 @@ export class AudioDirector {
     });
     this.context = null;
     this.master = null;
-    this.ambientGain = null;
     this.musicGain = null;
     this.musicBus = null;        // sub-mix: { melody, harmony, pad, perc } gains
     this.padVoices = [];         // currently sustaining pad oscillators
@@ -108,7 +93,6 @@ export class AudioDirector {
     this.toneRig = null;         // active Tone nodes: { synths, effects, loopId }
     this.toneActive = false;     // true when Tone drives the music (else fallback)
     this._toneLoadPromise = null;
-    this.ambientNodes = [];
     this.musicTimer = null;
     this.musicStep = 0;
     this.activeMusicProfile = null;
@@ -144,43 +128,19 @@ export class AudioDirector {
     return this.setMuted(!this.muted);
   }
 
+  // Starts the chapter's background music. (Named "ambience" for historical
+  // reasons / GameEngine call sites; the old continuous drone was removed.)
   async startChapterAmbience(index) {
     const ready = await this.ensure();
     if (!ready) return false;
     this.stopChapterAmbience();
-
-    const profile = getChapterAmbienceProfile(index);
-    const now = this.context.currentTime;
-    this.ambientGain = this.context.createGain();
-    this.ambientGain.gain.setValueAtTime(0, now);
-    this.ambientGain.gain.linearRampToValueAtTime(0.16, now + 1.4);
-    this.ambientGain.connect(this.master);
-
-    const base = this._createOscillator(profile.baseHz, 'sine', 0.55);
-    const shimmer = this._createOscillator(profile.shimmerHz, 'triangle', 0.18);
-    [base, shimmer].forEach(node => {
-      node.gain.connect(this.ambientGain);
-      node.osc.start(now);
-      this.ambientNodes.push(node);
-    });
     this._startChapterMusic(index);
     return true;
   }
 
   stopChapterAmbience() {
     if (!this.context) return;
-    const now = this.context.currentTime;
     this._stopChapterMusic();
-    this.ambientNodes.forEach(node => {
-      try {
-        node.gain.gain.setTargetAtTime(0, now, 0.08);
-        node.osc.stop(now + 0.25);
-      } catch {
-        // Oscillator may already be stopped.
-      }
-    });
-    this.ambientNodes = [];
-    this.ambientGain = null;
   }
 
   _startChapterMusic(index) {
@@ -513,16 +473,6 @@ export class AudioDirector {
       volume: profile.volume,
       type: profile.type === 'impact' ? 'sawtooth' : 'triangle',
     });
-  }
-
-  _createOscillator(frequency, type, gainValue) {
-    const osc = this.context.createOscillator();
-    const gain = this.context.createGain();
-    osc.frequency.value = frequency;
-    osc.type = type;
-    gain.gain.value = gainValue;
-    osc.connect(gain);
-    return { osc, gain };
   }
 
   _playTone({ frequency, duration, volume, type }) {

@@ -1,7 +1,6 @@
 import { PlotEngine } from '../core/PlotEngine.js';
 import {
   getArpeggioFrequency,
-  getChapterAmbienceProfile,
   getChapterMusicProfile,
   getChordFrequencies,
   getEventSoundProfile,
@@ -1174,14 +1173,6 @@ test('samples rolling frame rate only after report intervals', () => {
 });
 
 console.log('\nAudioDirector');
-test('chapter ambience profiles fall back to the first chapter', () => {
-  const first = getChapterAmbienceProfile(0);
-  const fallback = getChapterAmbienceProfile(999);
-  assertEqual(first.baseHz, fallback.baseHz);
-  assert(first.baseHz > 0);
-  assert(first.shimmerHz > first.baseHz);
-});
-
 test('chapter music profiles expose playable melodic steps', () => {
   const profile = getChapterMusicProfile(0);
   const fallback = getChapterMusicProfile(999);
