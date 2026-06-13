@@ -402,33 +402,33 @@ html, body {
   color: var(--gold-light); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-/* Compact, non-blocking performance nudge. Anchored top-left under the short
-   chapter-info block so it never fights the persistent mission panel (top-right)
-   or covers gameplay. */
+/* Compact, non-blocking performance nudge. Anchored top-right directly under the
+   FPS badge / system buttons so it reads as part of that cluster, and stays clear
+   of the mission panel (which starts at top:5.2rem on the same side). */
 .performance-chip {
-  position: absolute; top: 4.1rem; left: 1.5rem;
-  display: inline-flex; align-items: center; gap: 0.3rem;
+  position: absolute; top: 3.55rem; right: 1.5rem;
+  display: inline-flex; align-items: center; gap: 0.2rem;
   pointer-events: auto; z-index: 2;
 }
 .performance-chip-action {
-  display: inline-flex; align-items: center; gap: 0.4rem;
-  height: 30px; padding: 0 0.7rem;
+  display: inline-flex; align-items: center; gap: 0.34rem;
+  height: 26px; padding: 0 0.6rem;
   border: 1px solid rgba(238,157,83,0.5); border-radius: 999px;
   background: linear-gradient(135deg, rgba(35,24,16,0.92), rgba(18,31,37,0.86));
-  box-shadow: 0 6px 18px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.08);
+  box-shadow: 0 5px 16px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.08);
   backdrop-filter: blur(10px);
-  color: #ffe6bf; font-family: var(--font-ui); font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.04em; cursor: pointer;
+  color: #ffe6bf; font-family: var(--font-ui); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.04em; cursor: pointer; white-space: nowrap;
 }
 .performance-chip-action:hover { border-color: rgba(232,201,122,0.8); color: var(--gold-light); }
 .performance-chip-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #ee9d53;
-  box-shadow: 0 0 8px rgba(238,157,83,0.7);
+  width: 5px; height: 5px; border-radius: 50%; background: #ee9d53;
+  box-shadow: 0 0 7px rgba(238,157,83,0.7);
   animation: pulse 1.6s ease-in-out infinite;
 }
 .performance-chip-dismiss {
-  width: 26px; height: 30px; border: none; background: none;
-  color: rgba(240,232,213,0.55); cursor: pointer; font-size: 0.95rem; line-height: 1;
+  width: 22px; height: 26px; border: none; background: none;
+  color: rgba(240,232,213,0.55); cursor: pointer; font-size: 0.9rem; line-height: 1;
   pointer-events: auto;
 }
 .performance-chip-dismiss:hover { color: rgba(240,232,213,0.9); }
@@ -682,14 +682,24 @@ body.enhanced-subtitles .dialogue-skip-hint {
 /* Hidden while the player can't be controlled (dialogue, pause, cinematic) so
    the joysticks and E button never overlap the dialogue box. */
 #mobile-controls.controls-suppressed { display: none; }
-.joystick-container { position: absolute; bottom: 2.5rem; pointer-events: all; text-align: center; }
-.left-joystick { left: 2rem; }
-.right-joystick { right: 2rem; }
+/* Each container is the (generous) touch zone. The ring floats to the finger on
+   touch and snaps home on release; the label stays pinned as a home hint. */
+.joystick-container {
+  position: absolute; bottom: 2.5rem; width: 150px; height: 150px;
+  pointer-events: all;
+}
+.left-joystick { left: 1.5rem; }
+.right-joystick { right: 1.5rem; }
 .joystick-base {
   width: 110px; height: 110px; border-radius: 50%;
   background: rgba(13,27,42,0.6); border: 2px solid rgba(201,168,76,0.4);
-  position: relative; backdrop-filter: blur(8px);
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  backdrop-filter: blur(8px);
+  transition: left 0.16s ease, top 0.16s ease, opacity 0.16s ease;
 }
+/* While dragging, the ring is pinned under the finger with no transition so it
+   places instantly; removing the class on release lets it animate home. */
+.joystick-base.floating { transition: none; opacity: 0.92; }
 .joystick-ring {
   position: absolute; inset: 15px; border-radius: 50%;
   border: 1px solid rgba(201,168,76,0.2);
@@ -702,7 +712,11 @@ body.enhanced-subtitles .dialogue-skip-hint {
   box-shadow: 0 2px 10px rgba(201,168,76,0.5);
   transition: transform 0.05s;
 }
-.joystick-label { font-size: 0.7rem; color: rgba(201,168,76,0.6); margin-top: 0.4rem; letter-spacing: 0.1em; }
+.joystick-label {
+  position: absolute; left: 50%; bottom: 0.3rem; transform: translateX(-50%);
+  font-size: 0.7rem; color: rgba(201,168,76,0.6); letter-spacing: 0.1em;
+  pointer-events: none;
+}
 .mobile-btn {
   position: absolute; width: 52px; height: 52px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -813,10 +827,9 @@ body.enhanced-subtitles .dialogue-skip-hint {
   #game-ui {
     --controls-clearance: calc(2rem + 104px + 1.85rem + 52px + 0.85rem + env(safe-area-inset-bottom));
   }
-  /* The chip and the adjustment toast never show at once (chip = Auto off,
-     toast = Auto on), so they can share this bottom-left slot clear of the
-     crowded top bar and the joysticks. */
-  .performance-chip { top: auto; left: 1rem; right: auto; bottom: var(--controls-clearance); }
+  /* Chip stays tucked under the badge cluster top-right; the adjustment toast
+     keeps the bottom slot (the two never show at once). */
+  .performance-chip { top: 2.9rem; right: 1rem; left: auto; bottom: auto; }
   .quality-adjustment-toast {
     top: auto; left: 1rem; right: 1rem;
     bottom: var(--controls-clearance); width: auto;

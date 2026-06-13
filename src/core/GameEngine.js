@@ -620,9 +620,11 @@ export class GameEngine {
     const speed = CAM_SPEED * this.cameraSensitivity;
     if (inp.camLeft)  this.camYaw -= speed * delta;
     if (inp.camRight) this.camYaw += speed * delta;
-    // Mobile look
+    // Mobile look. Push right pans the view right (PS4 convention): a stick that
+    // deflects +x must DECREASE camYaw, because the rig's screen-right vector
+    // grows camYaw in the opposite on-screen direction.
     if (this.input.lookVector) {
-      this.camYaw += this.input.lookVector.x * speed * delta * LOOK_STICK_YAW_GAIN;
+      this.camYaw -= this.input.lookVector.x * speed * delta * LOOK_STICK_YAW_GAIN;
       this.camPitch = Math.max(
         CAM_PITCH_MIN,
         Math.min(CAM_PITCH_MAX, this.camPitch - this.input.lookVector.y * speed * delta)

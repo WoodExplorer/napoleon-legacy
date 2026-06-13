@@ -79,6 +79,26 @@
         </div>
       </div>
 
+      <div id="performance-recommendation" class="performance-chip hidden" role="status">
+        <button
+          id="btn-enable-auto-quality"
+          class="performance-chip-action"
+          type="button"
+          data-i18n-aria-label="performance.recommendAutoQuality"
+          data-i18n-title="performance.recommendAutoQuality"
+        >
+          <span class="performance-chip-dot" aria-hidden="true"></span>
+          <span id="performance-recommendation-text" data-i18n="performance.recommendChip"></span>
+        </button>
+        <button
+          id="btn-dismiss-performance-recommendation"
+          class="performance-chip-dismiss"
+          type="button"
+          data-i18n-aria-label="performance.dismiss"
+          data-i18n-title="performance.dismiss"
+        >×</button>
+      </div>
+
       <aside id="mission-panel" class="hidden" aria-live="polite">
         <div class="mission-header">
           <span class="mission-kicker" data-i18n="mission.kicker"></span>
@@ -107,26 +127,6 @@
           <span id="objective-compass-name"></span>
           <span id="objective-compass-distance"></span>
         </div>
-      </div>
-
-      <div id="performance-recommendation" class="performance-chip hidden" role="status">
-        <button
-          id="btn-enable-auto-quality"
-          class="performance-chip-action"
-          type="button"
-          data-i18n-aria-label="performance.recommendAutoQuality"
-          data-i18n-title="performance.recommendAutoQuality"
-        >
-          <span class="performance-chip-dot" aria-hidden="true"></span>
-          <span id="performance-recommendation-text" data-i18n="performance.recommendChip"></span>
-        </button>
-        <button
-          id="btn-dismiss-performance-recommendation"
-          class="performance-chip-dismiss"
-          type="button"
-          data-i18n-aria-label="performance.dismiss"
-          data-i18n-title="performance.dismiss"
-        >×</button>
       </div>
 
       <div id="quality-adjustment-toast" class="quality-adjustment-toast hidden" role="status">

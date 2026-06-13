@@ -53,16 +53,23 @@ export class InputController {
 }
 
 /**
- * MobileJoystick - 虚拟摇杆
+ * MobileJoystick - 虚拟摇杆 (floating)
+ *
+ * Touch anywhere in the stick's zone and the visible ring re-centers under the
+ * finger; you then drag from there. First touch reports zero deflection (no
+ * "jump" to full), and the ring snaps back to its home corner on release.
  */
 export class MobileJoystick {
-  constructor(baseEl, thumbEl, onChange) {
-    this.base = baseEl;
+  constructor(zoneEl, thumbEl, onChange) {
+    this.zone = zoneEl;                                   // .joystick-container (touch zone)
+    this.visual = zoneEl.querySelector('.joystick-base') || zoneEl; // ring that floats
     this.thumb = thumbEl;
     this.onChange = onChange;
     this.active = false;
     this.touchId = null;   // identifier of the finger that owns this stick
     this.radius = 40;
+    this.centerX = 0;      // dynamic center = where the finger first landed
+    this.centerY = 0;
     this._bind();
   }
 
@@ -76,16 +83,20 @@ export class MobileJoystick {
   }
 
   _bind() {
-    this.base.addEventListener('touchstart', e => {
+    this.zone.addEventListener('touchstart', e => {
       if (this.active) return;            // already tracking a finger
+      // An overlapping control (e.g. the interact button) owns its own touches.
+      if (e.target.closest?.('#mobile-interact')) return;
       e.preventDefault();
       const t = e.changedTouches[0];
       this.active = true;
       this.touchId = t.identifier;
-      const rect = this.base.getBoundingClientRect();
-      this.centerX = rect.left + rect.width / 2;
-      this.centerY = rect.top + rect.height / 2;
-      this._update(t.clientX, t.clientY);
+      this.centerX = t.clientX;           // anchor the origin at the touch point
+      this.centerY = t.clientY;
+      this._floatTo(t.clientX, t.clientY);
+      // Start at rest: zero deflection, so a tap never slams the stick to full.
+      this.thumb.style.transform = 'translate(-50%, -50%)';
+      this.onChange(0, 0);
     }, { passive: false });
 
     window.addEventListener('touchmove', e => {
@@ -100,11 +111,37 @@ export class MobileJoystick {
       if (!this.active || !this._findTouch(e.changedTouches)) return;
       this.active = false;
       this.touchId = null;
+      this._resetFloat();
       this.thumb.style.transform = 'translate(-50%, -50%)';
       this.onChange(0, 0);
     };
     window.addEventListener('touchend', release);
     window.addEventListener('touchcancel', release);
+  }
+
+  // Pin the ring's center under the finger. Uses container-local coordinates so
+  // the ring stays position:absolute (its CSS default) and the snap-home
+  // transition can animate left/top back to the home anchor on release.
+  _floatTo(x, y) {
+    const rect = this.zone.getBoundingClientRect();
+    const v = this.visual;
+    v.style.left = `${x - rect.left}px`;
+    v.style.top = `${y - rect.top}px`;
+    v.style.right = 'auto';
+    v.style.bottom = 'auto';
+    v.style.transform = 'translate(-50%, -50%)';
+    v.classList.add('floating');
+  }
+
+  // Return the ring to its CSS home anchor (transition animates the snap-back).
+  _resetFloat() {
+    const v = this.visual;
+    v.style.left = '';
+    v.style.top = '';
+    v.style.right = '';
+    v.style.bottom = '';
+    v.style.transform = '';
+    v.classList.remove('floating');
   }
 
   _update(cx, cy) {
