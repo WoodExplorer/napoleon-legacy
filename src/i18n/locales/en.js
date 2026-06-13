@@ -88,7 +88,8 @@ export const en = {
   },
   performance: {
     badgeLabel: '{fps} FPS · {quality} graphics',
-    recommendAutoQuality: 'Frame rate is under pressure. Auto Quality can stabilize rendering.',
+    recommendAutoQuality: 'Frame rate is under pressure. Tap to let Auto Quality stabilize rendering.',
+    recommendChip: 'Optimize',
     enableAuto: 'Enable Auto',
     dismiss: 'Dismiss performance recommendation',
     autoAdjusted: 'Auto Quality lowered graphics to {quality}.',

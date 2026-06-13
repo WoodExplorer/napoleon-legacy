@@ -88,7 +88,8 @@ export const zhCN = {
   },
   performance: {
     badgeLabel: '{fps} FPS · {quality}画质',
-    recommendAutoQuality: '当前帧率承压，开启自动画质可稳定渲染。',
+    recommendAutoQuality: '当前帧率承压，点按开启自动画质以稳定渲染。',
+    recommendChip: '优化画质',
     enableAuto: '开启自动',
     dismiss: '关闭性能建议',
     autoAdjusted: '自动画质已将画质降至{quality}。',

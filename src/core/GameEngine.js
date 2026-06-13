@@ -36,6 +36,9 @@ const TURN_SPEED = 2.0;
 // to feel responsive, low enough to read as a turn rather than a snap.
 const STICK_TURN_RATE = 14;
 const CAM_SPEED = 1.8;
+// Multiplier on the mobile look stick's horizontal orbit. Kept modest so a
+// small thumb nudge pans smoothly instead of whipping the camera around.
+const LOOK_STICK_YAW_GAIN = 1.2;
 const INTERACT_DIST = 2.5;
 const INTERACT_AWARENESS_DIST = 6.5;
 const INTERACT_READY_ASSIST_DIST = 0.4;
@@ -619,7 +622,7 @@ export class GameEngine {
     if (inp.camRight) this.camYaw += speed * delta;
     // Mobile look
     if (this.input.lookVector) {
-      this.camYaw += this.input.lookVector.x * speed * delta * 2;
+      this.camYaw += this.input.lookVector.x * speed * delta * LOOK_STICK_YAW_GAIN;
       this.camPitch = Math.max(
         CAM_PITCH_MIN,
         Math.min(CAM_PITCH_MAX, this.camPitch - this.input.lookVector.y * speed * delta)
@@ -810,7 +813,7 @@ export class GameEngine {
     this.performanceUI.recommendation.classList.remove('hidden');
     this.performanceUI.recommendation.dataset.status = recommendation.status;
     if (this.performanceUI.recommendationText) {
-      this.performanceUI.recommendationText.textContent = t('performance.recommendAutoQuality');
+      this.performanceUI.recommendationText.textContent = t('performance.recommendChip');
     }
   }
 

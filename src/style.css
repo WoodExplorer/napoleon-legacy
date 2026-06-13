@@ -402,33 +402,36 @@ html, body {
   color: var(--gold-light); font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 
-.performance-recommendation {
-  position: absolute; top: 5.2rem; left: 1.5rem;
-  width: min(360px, calc(100vw - 3rem));
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0.85rem;
-  padding: 0.75rem 0.8rem;
-  border: 1px solid rgba(238,157,83,0.42); border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(35,24,16,0.92), rgba(18,31,37,0.84)),
-    rgba(5,13,21,0.78);
-  box-shadow: 0 16px 44px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.08);
-  backdrop-filter: blur(12px);
-  color: rgba(240,232,213,0.86); font-size: 0.78rem; line-height: 1.35;
+/* Compact, non-blocking performance nudge. Anchored top-left under the short
+   chapter-info block so it never fights the persistent mission panel (top-right)
+   or covers gameplay. */
+.performance-chip {
+  position: absolute; top: 4.1rem; left: 1.5rem;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  pointer-events: auto; z-index: 2;
 }
-.performance-recommendation-actions {
+.performance-chip-action {
   display: inline-flex; align-items: center; gap: 0.4rem;
+  height: 30px; padding: 0 0.7rem;
+  border: 1px solid rgba(238,157,83,0.5); border-radius: 999px;
+  background: linear-gradient(135deg, rgba(35,24,16,0.92), rgba(18,31,37,0.86));
+  box-shadow: 0 6px 18px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  color: #ffe6bf; font-family: var(--font-ui); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.04em; cursor: pointer;
 }
-.performance-recommendation-btn {
-  min-width: 30px; height: 30px; border: 1px solid rgba(232,201,122,0.24); border-radius: 7px;
-  background: rgba(5,13,21,0.42); color: rgba(240,232,213,0.78);
-  cursor: pointer; font-family: var(--font-ui); font-size: 0.72rem; font-weight: 700;
+.performance-chip-action:hover { border-color: rgba(232,201,122,0.8); color: var(--gold-light); }
+.performance-chip-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #ee9d53;
+  box-shadow: 0 0 8px rgba(238,157,83,0.7);
+  animation: pulse 1.6s ease-in-out infinite;
 }
-.performance-recommendation-btn.primary {
-  min-width: 88px; padding: 0 0.65rem;
-  background: rgba(201,168,76,0.18); color: #fff1a8;
-  border-color: rgba(232,201,122,0.52);
+.performance-chip-dismiss {
+  width: 26px; height: 30px; border: none; background: none;
+  color: rgba(240,232,213,0.55); cursor: pointer; font-size: 0.95rem; line-height: 1;
+  pointer-events: auto;
 }
-.performance-recommendation-btn:hover { border-color: rgba(232,201,122,0.72); color: var(--gold-light); }
+.performance-chip-dismiss:hover { color: rgba(240,232,213,0.9); }
 
 .quality-adjustment-toast {
   position: absolute; top: 9.6rem; left: 1.5rem;
@@ -810,15 +813,14 @@ body.enhanced-subtitles .dialogue-skip-hint {
   #game-ui {
     --controls-clearance: calc(2rem + 104px + 1.85rem + 52px + 0.85rem + env(safe-area-inset-bottom));
   }
-  .performance-recommendation {
-    top: auto; left: 1rem; right: 1rem; bottom: var(--controls-clearance); width: auto;
-    grid-template-columns: 1fr; gap: 0.65rem;
-  }
+  /* The chip and the adjustment toast never show at once (chip = Auto off,
+     toast = Auto on), so they can share this bottom-left slot clear of the
+     crowded top bar and the joysticks. */
+  .performance-chip { top: auto; left: 1rem; right: auto; bottom: var(--controls-clearance); }
   .quality-adjustment-toast {
     top: auto; left: 1rem; right: 1rem;
-    bottom: calc(var(--controls-clearance) + 4.9rem); width: auto;
+    bottom: var(--controls-clearance); width: auto;
   }
-  .performance-recommendation-actions { justify-content: flex-end; }
   .joystick-container { bottom: calc(2rem + env(safe-area-inset-bottom)); }
   .left-joystick { left: calc(1.25rem + env(safe-area-inset-left)); }
   .right-joystick { right: calc(1.25rem + env(safe-area-inset-right)); }
