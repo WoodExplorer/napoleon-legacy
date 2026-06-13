@@ -1,10 +1,13 @@
 import { PlotEngine } from '../core/PlotEngine.js';
 import {
+  getArpeggioFrequency,
   getChapterAmbienceProfile,
   getChapterMusicProfile,
+  getChordFrequencies,
   getEventSoundProfile,
   getFootstepInterval,
   getMusicStepFrequency,
+  getPercussionFeel,
   MASTER_VOLUME,
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
@@ -1189,6 +1192,35 @@ test('chapter music profiles expose playable melodic steps', () => {
   assert(first > 0);
   assert(later > 0);
   assert(first !== later);
+});
+
+test('chord frequencies resolve to a sustained harmony stack', () => {
+  const profile = getChapterMusicProfile(0);
+  const chord = getChordFrequencies(profile, 0);
+  assert(chord.length >= 3);
+  chord.forEach(hz => assert(hz > 0));
+  // Phrase index wraps the progression rather than going out of bounds.
+  const wrapped = getChordFrequencies(profile, profile.chords.length);
+  assertClose(wrapped[0], chord[0]);
+});
+
+test('arpeggio walks the chord tones and stays above the chord root', () => {
+  const profile = getChapterMusicProfile(0);
+  const chord = getChordFrequencies(profile, 0, 1);
+  const a0 = getArpeggioFrequency(profile, 0, 0, 1);
+  const a1 = getArpeggioFrequency(profile, 0, 1, 1);
+  assertClose(a0, chord[0]);
+  assertClose(a1, chord[1]);
+  // Octave-1 arpeggio sits above the octave-0 chord bed.
+  assert(a0 > getChordFrequencies(profile, 0, 0)[0]);
+});
+
+test('percussion feel falls back to a warm default for unknown tags', () => {
+  const march = getPercussionFeel(getChapterMusicProfile(1));
+  assert(Array.isArray(march.kickBeats));
+  assert(march.kickVol > 0);
+  const fallback = getPercussionFeel({ percussion: 'nonexistent' });
+  assert(Array.isArray(fallback.kickBeats));
 });
 
 test('footstep interval clamps by speed and blocks when movement is blocked', () => {
