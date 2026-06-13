@@ -11,7 +11,7 @@ import { MobileJoystick } from './controls/InputController.js';
 import { CHAPTERS, getChapter } from './ui/ChapterData.js';
 import { renderSummary } from './ui/SummaryUI.js';
 import { applyTranslations } from './i18n/dom.js';
-import { getLocale, onLocaleChange, setLocale, t } from './i18n/index.js';
+import { getLocale, onLocaleChange, setLocale, t, resolveChoiceText } from './i18n/index.js';
 import { loadChapterSceneClass } from './scenes/SceneRegistry.js';
 import {
   formatCameraSensitivity,
@@ -428,7 +428,7 @@ function showChapterComplete(index, nextChapterOverride = null) {
   const choices = gameState.getChoicesForChapter(index);
   choicesEl.innerHTML = choices.length
     ? `<h4 class="choice-record-title">${escapeHtml(t('chapterComplete.choicesTitle'))}</h4>` +
-      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${escapeHtml(c.choiceText)}</span></div>`).join('')
+      choices.map(c => `<div class="choice-item"><span class="choice-label">•</span><span>${escapeHtml(resolveChoiceText(c))}</span></div>`).join('')
     : `<p class="choice-record-empty">${escapeHtml(t('chapterComplete.noChoices'))}</p>`;
 
   const nextBtn = $('btn-next-chapter');

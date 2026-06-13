@@ -66,6 +66,12 @@ export function hasTranslationKey(key, locale = DEFAULT_LOCALE) {
   return resolvePath(LOCALES[locale], key) !== undefined;
 }
 
+export function resolveChoiceText(choice) {
+  if (!choice) return '';
+  if (choice.choiceKey && hasTranslationKey(choice.choiceKey)) return t(choice.choiceKey);
+  return choice.choiceText ?? '';
+}
+
 export function translateNode(node) {
   if (!node) return node;
   const translated = { ...node };
@@ -81,8 +87,7 @@ export function translateNode(node) {
     translated.choices = node.choices.map(choice => ({
       ...choice,
       text: choice.textKey ? t(choice.textKey) : choice.text,
-      textKey: undefined,
-    })).map(({ textKey, ...choice }) => choice);
+    }));
   }
   return translated;
 }

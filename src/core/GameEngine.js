@@ -348,7 +348,8 @@ export class GameEngine {
                this.currentChapterScene.id,
                node.id || 'plot_node',
                choice.text,
-               choice.impact
+               choice.impact,
+               choice.textKey
              );
            }
            pe.applyChoiceEffects(choice);
@@ -1052,7 +1053,8 @@ export class GameEngine {
                this.currentChapterScene.id,
                node.id,
                choice.text,
-               choice.impact
+               choice.impact,
+               choice.textKey
              );
            }
            if (choice.next) {

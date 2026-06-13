@@ -42,12 +42,13 @@ export class GameState {
     return normalizeStoryMode(this.storyMode);
   }
 
-  recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact) {
+  recordChoice(chapterIndex, chapterId, nodeId, choiceText, impact, choiceKey = null) {
     this.choices.push({
       chapterIndex,
       chapterId,
       nodeId,
       choiceText,
+      choiceKey,
       impact,
       storyMode: this.getStoryMode(),
       timestamp: Date.now(),
