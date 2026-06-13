@@ -8,6 +8,7 @@ import {
   getFootstepInterval,
   getMusicStepFrequency,
   getPercussionFeel,
+  getToneColor,
   MASTER_VOLUME,
 } from '../core/AudioDirector.js';
 import { AutoQualityController, QualityRecommendationController } from '../core/AutoQuality.js';
@@ -1221,6 +1222,18 @@ test('percussion feel falls back to a warm default for unknown tags', () => {
   assert(march.kickVol > 0);
   const fallback = getPercussionFeel({ percussion: 'nonexistent' });
   assert(Array.isArray(fallback.kickBeats));
+});
+
+test('tone color merges chapter overrides onto sane defaults', () => {
+  const ch0 = getToneColor(getChapterMusicProfile(0));
+  assert(typeof ch0.lead === 'string');
+  assert(typeof ch0.pad === 'string');
+  assert(ch0.reverb > 0);
+  // Missing profile or missing fields fall back to defaults rather than undefined.
+  const bare = getToneColor({});
+  assert(typeof bare.lead === 'string' && bare.reverb > 0);
+  const none = getToneColor(undefined);
+  assert(typeof none.lead === 'string' && none.reverb > 0);
 });
 
 test('footstep interval clamps by speed and blocks when movement is blocked', () => {

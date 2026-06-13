@@ -11,14 +11,16 @@ const CHAPTER_AMBIENCE = [
 ];
 
 const CHAPTER_MUSIC = [
-  { rootHz: 220, tempo: 72, mode: [0, 3, 5, 7, 10], motif: [0, 2, 3, 2, 4, 3, 1, 0], bass: [0, -2, -4, -2], chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 0, 2]], percussion: 'warm' },
-  { rootHz: 196, tempo: 88, mode: [0, 2, 3, 7, 10], motif: [0, 3, 4, 3, 2, 4, 1, 0], bass: [0, -5, -3, -2], chords: [[0, 2, 4], [4, 0, 2], [3, 0, 2], [0, 2, 4]], percussion: 'march' },
-  { rootHz: 246.94, tempo: 76, mode: [0, 2, 4, 7, 9], motif: [0, 1, 3, 4, 3, 1, 2, 0], bass: [0, -3, -5, -3], chords: [[0, 2, 4], [2, 4, 0], [3, 0, 2], [4, 2, 0]], percussion: 'court' },
-  { rootHz: 174.61, tempo: 92, mode: [0, 2, 5, 7, 10], motif: [0, 2, 4, 5, 4, 2, 3, 1], bass: [0, -5, -2, -7], chords: [[0, 2, 4], [4, 0, 2], [3, 5, 0], [0, 2, 4]], percussion: 'march' },
-  { rootHz: 164.81, tempo: 58, mode: [0, 2, 3, 7, 8], motif: [0, 1, 2, 1, 3, 2, 1, 0], bass: [0, -4, -5, -7], chords: [[0, 2, 4], [3, 0, 2], [4, 2, 0], [0, 2, 4]], percussion: 'sparse' },
-  { rootHz: 185, tempo: 64, mode: [0, 3, 5, 7, 10], motif: [3, 2, 1, 0, 2, 1, 0, -1], bass: [0, -2, -5, -4], chords: [[0, 2, 4], [4, 0, 2], [1, 3, 5], [3, 5, 0]], percussion: 'sparse' },
-  { rootHz: 207.65, tempo: 60, mode: [0, 2, 5, 7, 9], motif: [0, 2, 1, 3, 2, 4, 3, 1], bass: [0, -5, -7, -5], chords: [[0, 2, 4], [2, 4, 0], [3, 0, 2], [0, 2, 4]], percussion: 'warm' },
+  { rootHz: 220, tempo: 72, mode: [0, 3, 5, 7, 10], motif: [0, 2, 3, 2, 4, 3, 1, 0], bass: [0, -2, -4, -2], chords: [[0, 2, 4], [3, 5, 0], [1, 3, 5], [4, 0, 2]], percussion: 'warm', tone: { lead: 'triangle', pad: 'sine', reverb: 3.2 } },
+  { rootHz: 196, tempo: 88, mode: [0, 2, 3, 7, 10], motif: [0, 3, 4, 3, 2, 4, 1, 0], bass: [0, -5, -3, -2], chords: [[0, 2, 4], [4, 0, 2], [3, 0, 2], [0, 2, 4]], percussion: 'march', tone: { lead: 'sawtooth', pad: 'triangle', reverb: 2.2 } },
+  { rootHz: 246.94, tempo: 76, mode: [0, 2, 4, 7, 9], motif: [0, 1, 3, 4, 3, 1, 2, 0], bass: [0, -3, -5, -3], chords: [[0, 2, 4], [2, 4, 0], [3, 0, 2], [4, 2, 0]], percussion: 'court', tone: { lead: 'triangle', pad: 'sine', reverb: 3.8 } },
+  { rootHz: 174.61, tempo: 92, mode: [0, 2, 5, 7, 10], motif: [0, 2, 4, 5, 4, 2, 3, 1], bass: [0, -5, -2, -7], chords: [[0, 2, 4], [4, 0, 2], [3, 5, 0], [0, 2, 4]], percussion: 'march', tone: { lead: 'sawtooth', pad: 'sawtooth', reverb: 2.6 } },
+  { rootHz: 164.81, tempo: 58, mode: [0, 2, 3, 7, 8], motif: [0, 1, 2, 1, 3, 2, 1, 0], bass: [0, -4, -5, -7], chords: [[0, 2, 4], [3, 0, 2], [4, 2, 0], [0, 2, 4]], percussion: 'sparse', tone: { lead: 'sine', pad: 'sine', reverb: 4.6 } },
+  { rootHz: 185, tempo: 64, mode: [0, 3, 5, 7, 10], motif: [3, 2, 1, 0, 2, 1, 0, -1], bass: [0, -2, -5, -4], chords: [[0, 2, 4], [4, 0, 2], [1, 3, 5], [3, 5, 0]], percussion: 'sparse', tone: { lead: 'triangle', pad: 'sine', reverb: 4.2 } },
+  { rootHz: 207.65, tempo: 60, mode: [0, 2, 5, 7, 9], motif: [0, 2, 1, 3, 2, 4, 3, 1], bass: [0, -5, -7, -5], chords: [[0, 2, 4], [2, 4, 0], [3, 0, 2], [0, 2, 4]], percussion: 'warm', tone: { lead: 'triangle', pad: 'sine', reverb: 3.6 } },
 ];
+
+const DEFAULT_TONE_COLOR = { lead: 'triangle', pad: 'sine', reverb: 3.2 };
 
 // Percussion feel → which beats get a kick (strong) and a tick (offbeat accent).
 const PERCUSSION_FEEL = {
@@ -42,6 +44,10 @@ export function getChapterMusicProfile(index) {
 
 export function getPercussionFeel(profile) {
   return PERCUSSION_FEEL[profile?.percussion] || PERCUSSION_FEEL.warm;
+}
+
+export function getToneColor(profile) {
+  return { ...DEFAULT_TONE_COLOR, ...(profile?.tone || {}) };
 }
 
 // Convert a scale-degree (which may exceed the mode length, wrapping octaves)
@@ -98,6 +104,10 @@ export class AudioDirector {
     this.musicBus = null;        // sub-mix: { melody, harmony, pad, perc } gains
     this.padVoices = [];         // currently sustaining pad oscillators
     this.noiseBuffer = null;     // shared buffer for percussion ticks
+    this.tone = null;            // lazily-imported Tone.js module (browser only)
+    this.toneRig = null;         // active Tone nodes: { synths, effects, loopId }
+    this.toneActive = false;     // true when Tone drives the music (else fallback)
+    this._toneLoadPromise = null;
     this.ambientNodes = [];
     this.musicTimer = null;
     this.musicStep = 0;
@@ -197,7 +207,111 @@ export class AudioDirector {
       pad: bus(0.34),
       perc: bus(0.5),
     };
-    this._scheduleMusicStep();
+
+    // Prefer the richer Tone.js engine; fall back to the hand-rolled scheduler
+    // if Tone can't load (offline, blocked, or any init error) so music is never
+    // silent. The profile captured now guards against a chapter switch mid-load.
+    const profileAtStart = this.activeMusicProfile;
+    this._startToneMusic(profileAtStart).then(ok => {
+      if (!ok && this.activeMusicProfile === profileAtStart) {
+        this._scheduleMusicStep();   // fallback path
+      }
+    });
+  }
+
+  // Build the Tone.js music graph on the game's existing AudioContext. Returns
+  // true if Tone took over, false if the caller should use the fallback synth.
+  async _startToneMusic(profile) {
+    if (!this.context || !this.musicBus) return false;
+    let Tone;
+    try {
+      Tone = await this._loadTone();
+    } catch {
+      return false;
+    }
+    // A chapter change (or stop) happened while Tone was loading.
+    if (!Tone || this.activeMusicProfile !== profile || !this.musicBus) return false;
+
+    try {
+      // Share the game's AudioContext so the master-gain mute keeps working.
+      if (this.tone.getContext().rawContext !== this.context) {
+        this.tone.setContext(this.context);
+      }
+      const color = getToneColor(profile);
+
+      const reverb = new Tone.Reverb({ decay: color.reverb, wet: 0.32 });
+      const leadGain = new Tone.Gain(0.12);
+      const padGain = new Tone.Gain(0.08);
+      const bassGain = new Tone.Gain(0.16);
+
+      const lead = new Tone.Synth({ oscillator: { type: color.lead }, envelope: { attack: 0.02, decay: 0.2, sustain: 0.4, release: 0.6 } });
+      const pad = new Tone.PolySynth(Tone.Synth, { oscillator: { type: color.pad }, envelope: { attack: 0.9, decay: 0.6, sustain: 0.8, release: 1.6 } });
+      const bass = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.04, decay: 0.3, sustain: 0.6, release: 0.5 } });
+
+      // Route everything through reverb into the existing musicGain (under master).
+      lead.connect(leadGain); pad.connect(padGain); bass.connect(bassGain);
+      leadGain.connect(reverb); padGain.connect(reverb); bassGain.connect(reverb);
+      const sink = this.context.createGain();
+      sink.connect(this.musicGain);
+      reverb.connect(sink);
+
+      const transport = this.tone.getTransport();
+      transport.bpm.value = profile.tempo;
+
+      let step = 0;
+      const motifLen = profile.motif.length;
+      const beatSeconds = 60 / profile.tempo;
+      const loopId = transport.scheduleRepeat((time) => {
+        if (this.muted) return;
+        const phraseIndex = Math.floor(step / motifLen);
+        const melodyHz = getMusicStepFrequency(profile, step, step % motifLen === motifLen - 1 ? 1 : 0);
+        lead.triggerAttackRelease(melodyHz, beatSeconds * 0.8, time);
+
+        if (step % 2 === 0) {
+          const bassOffset = profile.bass[Math.floor(step / 2) % profile.bass.length];
+          const bassHz = profile.rootHz * (2 ** (bassOffset / 12)) / 2;
+          bass.triggerAttackRelease(bassHz, beatSeconds * 1.4, time);
+        }
+        if (step % motifLen === 0) {
+          const chord = getChordFrequencies(profile, phraseIndex, 0);
+          pad.triggerAttackRelease(chord, beatSeconds * motifLen * 0.95, time);
+        }
+        step = (step + 1) % (motifLen * 2);
+      }, '4n');
+
+      this.toneRig = { nodes: [lead, pad, bass, leadGain, padGain, bassGain, reverb, sink], loopId };
+      this.toneActive = true;
+      if (transport.state !== 'started') transport.start();
+      return true;
+    } catch {
+      this._teardownTone();
+      return false;
+    }
+  }
+
+  async _loadTone() {
+    if (this.tone) return this.tone;
+    if (!this._toneLoadPromise) {
+      // Dynamic import keeps Tone out of the Node test path (no AudioContext there).
+      this._toneLoadPromise = import('tone').then(mod => {
+        this.tone = mod;
+        return mod;
+      });
+    }
+    return this._toneLoadPromise;
+  }
+
+  _teardownTone() {
+    if (!this.toneRig) { this.toneActive = false; return; }
+    const { nodes, loopId } = this.toneRig;
+    try {
+      if (this.tone && loopId != null) this.tone.getTransport().clear(loopId);
+    } catch { /* transport may be gone */ }
+    (nodes || []).forEach(node => {
+      try { node.dispose ? node.dispose() : node.disconnect?.(); } catch { /* already disposed */ }
+    });
+    this.toneRig = null;
+    this.toneActive = false;
   }
 
   _stopChapterMusic() {
@@ -205,6 +319,7 @@ export class AudioDirector {
       clearTimeout(this.musicTimer);
       this.musicTimer = null;
     }
+    this._teardownTone();
     this._stopPadVoices(0.2);
     if (this.musicGain && this.context) {
       try {
